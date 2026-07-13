@@ -2,11 +2,12 @@
 
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, User, Sparkles, UploadCloud } from 'lucide-react';
 import styles from '../auth.module.css';
 
 function RegisterContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Read initial role or default to seeker
@@ -17,18 +18,73 @@ function RegisterContent() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'seeker' | 'recruiter' | 'admin'>(initialRole);
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
+  const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      setProfilePicFile(file);
       setProfilePicUrl(URL.createObjectURL(file));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Static UI only: Submit logic to be implemented later with backend
-    console.log('Register submitted for:', name, email, role);
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      let uploadedPicUrl = null;
+
+      // Upload image to ImgBB if selected
+      if (profilePicFile) {
+        const formData = new FormData();
+        formData.append('image', profilePicFile);
+        
+        const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=4983d5f47f26efc3e85064efe6b1a73c`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const imgbbData = await imgbbRes.json();
+        if (imgbbData.success) {
+          uploadedPicUrl = imgbbData.data.url;
+        } else {
+          throw new Error('Image upload failed');
+        }
+      }
+
+      // Register user in MongoDB
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role,
+          profilePic: uploadedPicUrl,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Optionally save user to context or local storage here
+        router.push(role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');
+      } else {
+        setErrorMsg(data.message || 'Registration failed');
+      }
+    } catch (err) {
+      console.error('Registration Error:', err);
+      setErrorMsg('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -59,6 +115,12 @@ function RegisterContent() {
             Recruiter
           </button>
         </div>
+
+        {errorMsg && (
+          <div className={styles.errorBox}>
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {/* Profile Picture Upload */}
@@ -127,8 +189,8 @@ function RegisterContent() {
             </div>
           </div>
 
-          <button type="submit" className={styles.submitBtn}>
-            Create Account
+          <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+            {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 

@@ -2,11 +2,12 @@
 
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Sparkles } from 'lucide-react';
 import styles from '../auth.module.css';
 
 function LoginContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Read initial role or pre-fill seeker
@@ -15,11 +16,34 @@ function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'seeker' | 'recruiter' | 'admin'>(initialRole);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Static UI only: Submit logic to be implemented later with backend
-    console.log('Login submitted for:', email, role);
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        // Here you might set the user in AuthContext or save token
+        router.push(role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');
+      } else {
+        setErrorMsg(data.message || 'Login failed');
+      }
+    } catch (err) {
+      console.error('Login Error:', err);
+      setErrorMsg('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -50,6 +74,12 @@ function LoginContent() {
             Recruiter
           </button>
         </div>
+
+        {errorMsg && (
+          <div className={styles.errorBox}>
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
@@ -82,8 +112,8 @@ function LoginContent() {
             </div>
           </div>
 
-          <button type="submit" className={styles.submitBtn}>
-            Sign In
+          <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+            {isSubmitting ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
