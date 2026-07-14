@@ -48,10 +48,20 @@ export default function SeekerDashboard() {
         setResumeUrl(user.profile.resumeUrl || '');
         setAvatar(user.profile.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`);
 
-        // Load applications
-        const allApps = getApplications();
-        const seekerApps = allApps.filter(app => app.seekerId === user.id);
-        setApplications(seekerApps);
+        // Load applications from API
+        const fetchApplications = async () => {
+          try {
+            const res = await fetch(`http://localhost:5000/api/applications?seekerId=${user.id}`);
+            if (res.ok) {
+              const data = await res.json();
+              // map _id to id for the frontend type
+              setApplications(data.map((d: any) => ({ ...d, id: d._id || d.id })));
+            }
+          } catch (err) {
+            console.error('Error fetching applications:', err);
+          }
+        };
+        fetchApplications();
       }, 0);
     }
   }, [user, loading, router]);

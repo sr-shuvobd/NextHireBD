@@ -76,8 +76,8 @@ function RegisterContent() {
       });
 
       if (signupRes.data?.user) {
-        toast.success('Registration successful!');
-        router.push(role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');
+        toast.success('Registration successful! Please log in.');
+        router.push(`/login?role=${role}`);
       } else {
         toast.error(signupRes.error?.message || 'Registration failed');
       }
@@ -178,11 +178,11 @@ function RegisterContent() {
               <Lock size={18} className="text-[var(--text-muted)]" />
               <input 
                 type="password" 
-                placeholder="Min 6 characters" 
+                placeholder="Min 8 characters" 
                 className="w-full text-[var(--text-primary)] text-[0.95rem] bg-transparent border-none outline-none placeholder-[var(--text-muted)]"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                minLength={6}
+                minLength={8}
                 required
               />
             </div>
