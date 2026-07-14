@@ -23,14 +23,44 @@ export default function Home() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
+  const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchFeaturedJobs = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/jobs');
+        if (res.ok) {
+          const dbJobs = await res.json();
+          const mappedJobs = dbJobs.map((dbJob: any) => ({
+            id: dbJob._id,
+            title: dbJob.title,
+            companyName: dbJob.companyName || 'Unknown Company',
+            companyLogo: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(dbJob.companyName || 'Job')}`,
+            location: dbJob.location,
+            workType: dbJob.location.toLowerCase().includes('remote') ? 'remote' : 'onsite',
+            jobType: dbJob.type.toLowerCase(),
+            salaryMin: parseInt(dbJob.salary?.split('-')[0]?.replace(/[^0-9]/g, '')) || 0,
+            salaryMax: parseInt(dbJob.salary?.split('-')[1]?.replace(/[^0-9]/g, '')) || 150000,
+            currency: 'BDT',
+            skillsRequired: dbJob.skillsRequired ? dbJob.skillsRequired.split(',').map((s: string) => s.trim()) : [],
+            category: 'Tech'
+          }));
+          setFeaturedJobs(mappedJobs.slice(0, 3));
+        } else {
+          setFeaturedJobs([]);
+        }
+      } catch (err) {
+        console.error("Error fetching homepage featured jobs:", err);
+        setFeaturedJobs([]);
+      }
+    };
+    fetchFeaturedJobs();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     router.push(`/jobs?search=${encodeURIComponent(search)}&location=${encodeURIComponent(location)}`);
   };
-
-  // Get first 3 jobs as featured
-  const featuredJobs = getJobs().slice(0, 3);
 
   const categories = [
     { name: 'Technology', count: '120+ Jobs', icon: <Code size={24} /> },
@@ -174,7 +204,7 @@ export default function Home() {
                     <span className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 px-2.5 py-1 rounded-[6px] text-[0.8rem] font-medium">
                       {job.salaryMin.toLocaleString()} - {job.salaryMax.toLocaleString()} {job.currency}
                     </span>
-                    {job.skillsRequired.slice(0, 3).map((skill, sIdx) => (
+                    {job.skillsRequired.slice(0, 3).map((skill: string, sIdx: number) => (
                       <span key={sIdx} className="bg-white/[0.04] border border-[var(--border-color)] px-2.5 py-1 rounded-[6px] text-[0.8rem] font-medium text-[var(--text-secondary)]">{skill}</span>
                     ))}
                   </div>

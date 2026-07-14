@@ -33,6 +33,14 @@ function RegisterContent() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Validate password contains at least one letter and one number
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d).+$/;
+    if (!passwordRegex.test(password)) {
+      toast.error('Password must contain both letters and numbers.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       let uploadedPicUrl = null;
 

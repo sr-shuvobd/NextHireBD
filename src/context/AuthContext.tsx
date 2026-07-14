@@ -24,7 +24,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, role: 'seeker' | 'recruiter' | 'admin') => Promise<boolean>;
+  login: (email: string, role: 'seeker' | 'recruiter' | 'admin', password?: string) => Promise<boolean>;
   register: (name: string, email: string, role: 'seeker' | 'recruiter' | 'admin') => Promise<boolean>;
   logout: () => void;
   updateProfile: (profileData: UserProfile) => Promise<boolean>;
@@ -88,8 +88,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, 0);
   }, []);
 
-  const login = async (email: string, role: 'seeker' | 'recruiter' | 'admin'): Promise<boolean> => {
+  const login = async (email: string, role: 'seeker' | 'recruiter' | 'admin', password?: string): Promise<boolean> => {
     setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role, password })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const dbUser = data.user;
+        const mappedUser: User = {
+          id: dbUser.id,
+          name: dbUser.name,
+          email: dbUser.email,
+          role: dbUser.role,
+          profile: {
+            avatar: dbUser.profilePic || dbUser.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(dbUser.name)}`,
+            companyName: dbUser.profile?.companyName || '',
+            companyWebsite: dbUser.profile?.companyWebsite || '',
+            bio: dbUser.profile?.bio || '',
+            title: dbUser.profile?.title || '',
+            skills: dbUser.profile?.skills || [],
+            resumeUrl: dbUser.profile?.resumeUrl || ''
+          }
+        };
+        setUser(mappedUser);
+        localStorage.setItem('nexthire_user', JSON.stringify(mappedUser));
+        setLoading(false);
+        return true;
+      }
+    } catch (err) {
+      console.error('Database login error, falling back to mock:', err);
+    }
+
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 800));
 
@@ -115,7 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile: {
         skills: [],
         bio: '',
-        title: ''
+        title: '',
+        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(email.split('@')[0].toUpperCase())}`
       }
     };
     const updatedList = [...registeredUsers, newUser];
@@ -168,6 +202,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = async (profileData: UserProfile): Promise<boolean> => {
     if (!user) return false;
+
+    // Send update request to database API
+    try {
+      const res = await fetch('/api/auth/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          profile: {
+            ...user.profile,
+            ...profileData
+          }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const dbUser = data.user;
+        const mappedUser: User = {
+          id: dbUser.id,
+          name: dbUser.name,
+          email: dbUser.email,
+          role: dbUser.role,
+          profile: {
+            avatar: dbUser.profilePic || dbUser.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(dbUser.name)}`,
+            companyName: dbUser.profile?.companyName || '',
+            companyWebsite: dbUser.profile?.companyWebsite || '',
+            bio: dbUser.profile?.bio || '',
+            title: dbUser.profile?.title || '',
+            skills: dbUser.profile?.skills || [],
+            resumeUrl: dbUser.profile?.resumeUrl || ''
+          }
+        };
+        setUser(mappedUser);
+        localStorage.setItem('nexthire_user', JSON.stringify(mappedUser));
+        return true;
+      }
+    } catch (err) {
+      console.error('Database update profile error, falling back to mock:', err);
+    }
 
     await new Promise((resolve) => setTimeout(resolve, 500));
 

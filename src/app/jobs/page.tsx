@@ -25,13 +25,46 @@ function JobsContent() {
   const [minSalary, setMinSalary] = useState<number>(0);
 
   // Job Listing state
+  const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
 
+  // Fetch jobs from server
   useEffect(() => {
-    // Read list of jobs
-    const allJobs = getJobs();
+    const fetchJobs = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/jobs');
+        if (res.ok) {
+          const dbJobs = await res.json();
+          const mappedJobs = dbJobs.map((dbJob: any) => ({
+            id: dbJob._id,
+            title: dbJob.title,
+            companyName: dbJob.companyName || 'Unknown Company',
+            companyLogo: dbJob.companyLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(dbJob.companyName || 'Job')}`,
+            location: dbJob.location,
+            workType: dbJob.location.toLowerCase().includes('remote') ? 'remote' : 'onsite',
+            jobType: dbJob.type.toLowerCase(),
+            salaryMin: parseInt(dbJob.salary?.split('-')[0]?.replace(/[^0-9]/g, '')) || 0,
+            salaryMax: parseInt(dbJob.salary?.split('-')[1]?.replace(/[^0-9]/g, '')) || 150000,
+            currency: 'BDT',
+            skillsRequired: dbJob.skillsRequired ? dbJob.skillsRequired.split(',').map((s: string) => s.trim()) : [],
+            category: 'Tech'
+          }));
+          setAllJobs(mappedJobs);
+        } else {
+          setAllJobs([]);
+        }
+      } catch (err) {
+        console.error("Error fetching jobs:", err);
+        setAllJobs([]);
+      }
+    };
+    fetchJobs();
+  }, []);
+
+  // Filter jobs logic
+  useEffect(() => {
+    if (allJobs.length === 0) return;
     
-    // Filter jobs
     const result = allJobs.filter((job) => {
       const matchSearch = 
         !search || 
@@ -63,10 +96,8 @@ function JobsContent() {
       return matchSearch && matchLocation && matchCategory && matchJobType && matchWorkType && matchSalary;
     });
 
-    setTimeout(() => {
-      setFilteredJobs(result);
-    }, 0);
-  }, [search, location, category, selectedJobTypes, selectedWorkTypes, minSalary]);
+    setFilteredJobs(result);
+  }, [allJobs, search, location, category, selectedJobTypes, selectedWorkTypes, minSalary]);
 
   const handleJobTypeChange = (type: string) => {
     setSelectedJobTypes((prev) => 

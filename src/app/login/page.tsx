@@ -25,7 +25,7 @@ function LoginContent() {
     setIsSubmitting(true);
 
     try {
-      const success = await login(email, role);
+      const success = await login(email, role, password);
       if (success) {
         toast.success('Logged in successfully!');
         router.push(role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');

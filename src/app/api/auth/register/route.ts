@@ -10,6 +10,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
+    // Validate password contains at least one letter and one number
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d).+$/;
+    if (!passwordRegex.test(password)) {
+      return NextResponse.json({ message: 'Password must contain both letters and numbers.' }, { status: 400 });
+    }
+
     const client = await clientPromise;
     const db = client.db('nexthirebd');
     const usersCollection = db.collection('users');

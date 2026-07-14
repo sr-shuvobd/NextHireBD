@@ -34,12 +34,40 @@ export default function RecruiterDashboard() {
   // Status states
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   
-  // Dummy posted jobs data
-  const [postedJobs, setPostedJobs] = useState<any[]>([
-    { id: '1', title: 'Senior Frontend Developer', location: 'Dhaka (Remote)', type: 'Full-Time', applications: 12, status: 'Active', postedAt: '2023-10-15' },
-    { id: '2', title: 'Backend Engineer (Node.js)', location: 'Dhaka (Onsite)', type: 'Full-Time', applications: 5, status: 'Active', postedAt: '2023-11-02' },
-  ]);
+  // Posted jobs state (initialized empty)
+  const [postedJobs, setPostedJobs] = useState<any[]>([]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoUploading(true);
+      
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=4983d5f47f26efc3e85064efe6b1a73c`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const imgbbData = await imgbbRes.json();
+        if (imgbbData.success) {
+          setAvatar(imgbbData.data.url);
+          toast.success('Logo uploaded successfully!');
+        } else {
+          toast.error('Logo upload failed');
+        }
+      } catch (err) {
+        console.error('Logo Upload Error:', err);
+        toast.error('Error uploading logo');
+      } finally {
+        setLogoUploading(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -60,6 +88,31 @@ export default function RecruiterDashboard() {
         setBio(user.profile.bio || '');
         setAvatar(user.profile.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`);
       }, 0);
+
+      // Fetch recruiter's posted jobs
+      const fetchMyJobs = async () => {
+        try {
+          const res = await fetch('http://localhost:5000/api/jobs');
+          if (res.ok) {
+            const dbJobs = await res.json();
+            const myJobs = dbJobs
+              .filter((j: any) => j.recruiterId === user.id)
+              .map((j: any) => ({
+                id: j._id,
+                title: j.title,
+                location: j.location,
+                type: j.type,
+                applications: j.applications || 0,
+                status: j.status || 'Active',
+                postedAt: j.postedAt ? j.postedAt.split('T')[0] : 'Today'
+              }));
+            setPostedJobs(myJobs);
+          }
+        } catch (error) {
+          console.error('Failed to fetch recruiter jobs:', error);
+        }
+      };
+      fetchMyJobs();
     }
   }, [user, loading, router]);
 
@@ -103,6 +156,7 @@ export default function RecruiterDashboard() {
           location: jobLocation,
           type: jobType,
           companyName: companyName || user.profile.companyName || 'Unknown Company',
+          companyLogo: avatar || user.profile.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(companyName || 'Job')}`,
           recruiterId: user.id,
           salary: jobSalary,
           description: jobDescription,
@@ -376,12 +430,22 @@ export default function RecruiterDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-[150px_1fr] gap-8">
                 {/* Left Column: Avatar */}
                 <div className="flex flex-col items-center gap-3">
-                  <img src={avatar} alt={name} className="w-[120px] h-[120px] rounded-full object-cover border-2 border-[var(--accent-purple)] bg-[var(--bg-secondary)]" />
-                  <span className="text-[0.8rem] text-[var(--accent-cyan)] cursor-pointer font-semibold" onClick={() => {
-                    const newAvatar = prompt('Enter a valid image URL for company logo:', avatar);
-                    if (newAvatar) setAvatar(newAvatar);
-                  }}>
-                    Change Logo
+                  <label htmlFor="companyLogoUpload" className="relative group cursor-pointer w-[120px] h-[120px]">
+                    <img src={avatar} alt={name} className="w-full h-full rounded-full object-cover border-2 border-[var(--accent-purple)] bg-[var(--bg-secondary)] transition-all duration-300 group-hover:opacity-75" />
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="text-[0.75rem] text-white font-bold text-center px-1">Upload Logo</span>
+                    </div>
+                  </label>
+                  <input 
+                    type="file" 
+                    id="companyLogoUpload" 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    onChange={handleLogoUpload} 
+                    disabled={logoUploading}
+                  />
+                  <span className="text-[0.8rem] text-[var(--accent-cyan)] cursor-pointer font-semibold" onClick={() => document.getElementById('companyLogoUpload')?.click()}>
+                    {logoUploading ? 'Uploading...' : 'Change Logo'}
                   </span>
                 </div>
 

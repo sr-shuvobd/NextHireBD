@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -24,7 +24,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const router = useRouter();
   const { user } = useAuth();
   
-  const job = getJobById(id);
+  const [job, setJob] = useState<any>(null);
+  const [loadingJob, setLoadingJob] = useState(true);
 
   // States
   const [modalOpen, setModalOpen] = useState(false);
@@ -33,6 +34,58 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    const fetchJobDetails = async () => {
+      // First try mock data
+      const mockJob = getJobById(id);
+      if (mockJob) {
+        setJob(mockJob);
+        setLoadingJob(false);
+        return;
+      }
+
+      // If not in mock, fetch from server
+      try {
+        const res = await fetch('http://localhost:5000/api/jobs');
+        if (res.ok) {
+          const dbJobs = await res.json();
+          const found = dbJobs.find((j: any) => j._id === id);
+          if (found) {
+            setJob({
+              id: found._id,
+              title: found.title,
+              companyName: found.companyName || 'Unknown Company',
+              companyLogo: found.companyLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(found.companyName || 'Job')}`,
+              location: found.location,
+              workType: found.location.toLowerCase().includes('remote') ? 'remote' : 'onsite',
+              jobType: found.type.toLowerCase(),
+              salaryMin: parseInt(found.salary?.split('-')[0]?.replace(/[^0-9]/g, '')) || 0,
+              salaryMax: parseInt(found.salary?.split('-')[1]?.replace(/[^0-9]/g, '')) || 150000,
+              currency: 'BDT',
+              skillsRequired: found.skillsRequired ? found.skillsRequired.split(',').map((s: string) => s.trim()) : [],
+              category: 'Tech',
+              description: `### Job Description\n\n${found.description || 'No description provided.'}\n\n### Job Requirements\n\n${found.requirements || 'No requirements specified.'}`,
+              createdAt: found.postedAt
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching job details:", err);
+      } finally {
+        setLoadingJob(false);
+      }
+    };
+    fetchJobDetails();
+  }, [id]);
+
+  if (loadingJob) {
+    return (
+      <div style={{ minHeight: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)' }}>
+        <span>Loading Job details...</span>
+      </div>
+    );
+  }
 
   if (!job) {
     return (
@@ -109,14 +162,14 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
           {/* Markdown Content (Rendered as text styling) */}
           <div className="leading-relaxed text-[var(--text-primary)] text-[1.05rem]">
             {/* Split description paragraphs */}
-            {job.description.split('\n\n').map((paragraph, index) => {
+            {job.description.split('\n\n').map((paragraph: string, index: number) => {
               if (paragraph.trim().startsWith('###')) {
                 return <h3 key={index} className="text-xl font-bold mt-8 mb-4 border-l-[3px] border-[var(--accent-cyan)] pl-3 text-[var(--text-primary)]">{paragraph.replace('###', '').trim()}</h3>;
               }
               if (paragraph.trim().startsWith('*')) {
                 return (
                   <ul key={index} className="pl-5 mb-6 flex flex-col gap-2 list-disc">
-                    {paragraph.split('\n').map((li, liIdx) => (
+                    {paragraph.split('\n').map((li: string, liIdx: number) => (
                       <li key={liIdx} className="text-[var(--text-secondary)]">{li.replace('*', '').trim()}</li>
                     ))}
                   </ul>
@@ -130,7 +183,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
           <div className="mt-10 border-t border-[var(--border-color)] pt-8">
             <h4 className="text-[1.15rem] font-bold mb-4">Skills Required</h4>
             <div className="flex flex-wrap gap-2">
-              {job.skillsRequired.map((skill, index) => (
+              {job.skillsRequired.map((skill: string, index: number) => (
                 <span key={index} className="bg-white/[0.04] border border-[var(--border-color)] px-3.5 py-1.5 rounded-full text-[0.85rem] font-medium">{skill}</span>
               ))}
             </div>
