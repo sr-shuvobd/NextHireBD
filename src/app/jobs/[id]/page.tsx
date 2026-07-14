@@ -3,16 +3,16 @@
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Briefcase, 
-  DollarSign, 
-  Calendar, 
-  Globe, 
-  User, 
-  FileText, 
-  CheckCircle2, 
+import {
+  ArrowLeft,
+  MapPin,
+  Briefcase,
+  DollarSign,
+  Calendar,
+  Globe,
+  User,
+  FileText,
+  CheckCircle2,
   X,
   Lock
 } from 'lucide-react';
@@ -23,7 +23,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [job, setJob] = useState<any>(null);
   const [loadingJob, setLoadingJob] = useState(true);
 
@@ -34,6 +34,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [hasApplied, setHasApplied] = useState(false);
 
   useEffect(() => {
     const fetchJobDetails = async () => {
@@ -79,6 +80,26 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
     fetchJobDetails();
   }, [id]);
 
+  // Check if current user has already applied in DB
+  useEffect(() => {
+    if (!user || !job) return;
+
+    const checkApplication = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/applications?seekerId=${user.id}&jobId=${job.id}`);
+        if (res.ok) {
+          const apps = await res.json();
+          if (apps && apps.length > 0) {
+            setHasApplied(true);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking application:', err);
+      }
+    };
+    checkApplication();
+  }, [user, job]);
+
   if (loadingJob) {
     return (
       <div style={{ minHeight: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)' }}>
@@ -103,27 +124,43 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  // Check if current user has already applied
-  const allApps = getApplications();
-  const hasApplied = user ? allApps.some(app => app.jobId === job.id && app.seekerId === user.id) : false;
-
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    
+    if (!user) {
+      setErrorMsg('Please sign in to apply for this job.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMsg('');
 
-    // Simulate API network latency
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    try {
+      const res = await fetch('http://localhost:5000/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: job.id,
+          jobTitle: job.title,
+          companyName: job.companyName,
+          seekerId: user.id,
+          seekerName: user.name,
+          coverLetter,
+          resumeUrl
+        })
+      });
 
-    const result = applyForJob(job.id, user.id, user.name, coverLetter, resumeUrl);
-    setIsSubmitting(false);
-
-    if (result) {
-      setSuccess(true);
-    } else {
-      setErrorMsg('Failed to apply. You might have already applied for this job.');
+      if (res.ok) {
+        setSuccess(true);
+        setHasApplied(true);
+      } else {
+        const data = await res.json();
+        setErrorMsg(data.message || 'Failed to apply. You might have already applied for this job.');
+      }
+    } catch (err) {
+      console.error('Error applying for job:', err);
+      setErrorMsg('Server error while submitting application.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -193,7 +230,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
         {/* Sticky Sidebar */}
         <aside className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-8 shadow-[var(--shadow-glass)] flex flex-col gap-6 sticky top-[100px]">
           <h3 className="text-xl font-bold text-[var(--text-primary)] border-b border-[var(--border-color)] pb-3">Job Summary</h3>
-          
+
           <div className="flex gap-4 items-center">
             <div className="w-11 h-11 rounded-[var(--border-radius-sm)] bg-[var(--accent-cyan)]/8 text-[var(--accent-cyan)] flex items-center justify-center"><DollarSign size={20} /></div>
             <div>
@@ -289,8 +326,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Resume URL</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-sm)', padding: '10px 14px' }}>
                       <FileText size={18} color="var(--accent-cyan)" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={resumeUrl}
                         onChange={(e) => setResumeUrl(e.target.value)}
                         style={{ width: '100%', color: '#ffffff', fontSize: '0.9rem' }}
@@ -304,7 +341,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
                   <div className="flex flex-col gap-2 mb-5">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Cover Letter</label>
-                    <textarea 
+                    <textarea
                       placeholder="Write a brief cover letter introducing yourself..."
                       className="w-full min-h-[120px] bg-white/[0.02] border border-[var(--border-color)] rounded-[var(--border-radius-sm)] p-3 text-[var(--text-primary)] text-[0.95rem] resize-y transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.05] outline-none"
                       value={coverLetter}
@@ -313,9 +350,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                     ></textarea>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className="accent-btn" 
+                  <button
+                    type="submit"
+                    className="accent-btn"
                     style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}
                     disabled={isSubmitting}
                   >
@@ -332,9 +369,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                 <p className="text-[var(--text-secondary)] text-[0.95rem] mb-6" style={{ marginBottom: 16 }}>
                   Your application for **{job.title}** at **{job.companyName}** has been sent successfully.
                 </p>
-                <button 
-                  onClick={() => { setModalOpen(false); setSuccess(false); }} 
-                  className="accent-btn" 
+                <button
+                  onClick={() => { setModalOpen(false); setSuccess(false); }}
+                  className="accent-btn"
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
                   Great, Thank You!
