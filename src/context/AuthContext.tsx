@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authClient } from '@/lib/auth-client';
 
 export interface UserProfile {
   avatar?: string;
@@ -24,7 +25,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, role: 'seeker' | 'recruiter' | 'admin', password?: string) => Promise<boolean>;
+  login: (email: string, role?: 'seeker' | 'recruiter' | 'admin', password?: string) => Promise<'seeker' | 'recruiter' | 'admin' | false>;
   register: (name: string, email: string, role: 'seeker' | 'recruiter' | 'admin') => Promise<boolean>;
   logout: () => void;
   updateProfile: (profileData: UserProfile) => Promise<boolean>;
@@ -63,212 +64,110 @@ const DEFAULT_USERS: User[] = [
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
-    // Check if user is logged in via localStorage
-    const savedUser = localStorage.getItem('nexthire_user');
-    let userToSet: User | null = null;
-    if (savedUser) {
-      try {
-        userToSet = JSON.parse(savedUser);
-      } catch {
-        localStorage.removeItem('nexthire_user');
-      }
-    } else {
-      // Seed default user for easy testing
-      localStorage.setItem('nexthire_registered_users', JSON.stringify(DEFAULT_USERS));
+    if (isPending) {
+      setLoading(true);
+      return;
     }
-    
-    // Defer state updates to satisfy react-hooks/set-state-in-effect linter rule
-    setTimeout(() => {
-      if (userToSet) {
-        setUser(userToSet);
-      }
-      setLoading(false);
-    }, 0);
-  }, []);
 
-  const login = async (email: string, role: 'seeker' | 'recruiter' | 'admin', password?: string): Promise<boolean> => {
+    if (session?.user) {
+      const u = session.user as any;
+      setUser({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role || 'seeker',
+        profile: {
+          avatar: u.avatar || u.image || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.name)}`,
+          companyName: u.companyName || '',
+          companyWebsite: u.companyWebsite || '',
+          bio: u.bio || '',
+          title: u.title || '',
+          skills: u.skills ? u.skills.split(',').map((s: string) => s.trim()) : [],
+          resumeUrl: u.resumeUrl || ''
+        }
+      });
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
+  }, [session, isPending]);
+
+  const login = async (email: string, role?: 'seeker' | 'recruiter' | 'admin', password?: string): Promise<'seeker' | 'recruiter' | 'admin' | false> => {
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role, password })
+      const res = await authClient.signIn.email({
+        email,
+        password: password || '',
       });
-      if (res.ok) {
-        const data = await res.json();
-        const dbUser = data.user;
-        const mappedUser: User = {
-          id: dbUser.id,
-          name: dbUser.name,
-          email: dbUser.email,
-          role: dbUser.role,
-          profile: {
-            avatar: dbUser.profilePic || dbUser.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(dbUser.name)}`,
-            companyName: dbUser.profile?.companyName || '',
-            companyWebsite: dbUser.profile?.companyWebsite || '',
-            bio: dbUser.profile?.bio || '',
-            title: dbUser.profile?.title || '',
-            skills: dbUser.profile?.skills || [],
-            resumeUrl: dbUser.profile?.resumeUrl || ''
-          }
-        };
-        setUser(mappedUser);
-        localStorage.setItem('nexthire_user', JSON.stringify(mappedUser));
-        setLoading(false);
+      if (res.data?.user) {
+        const u = res.data.user as any;
+        return u.role || 'seeker';
+      }
+    } catch (err) {
+      console.error('Better-Auth sign in error:', err);
+    } finally {
+      setLoading(false);
+    }
+    return false;
+  };
+
+  const register = async (name: string, email: string, role: 'seeker' | 'recruiter' | 'admin', password?: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const res = await authClient.signUp.email({
+        email,
+        password: password || 'DefaultPassword123!',
+        name,
+        role,
+      });
+      if (res.data?.user) {
         return true;
       }
     } catch (err) {
-      console.error('Database login error, falling back to mock:', err);
-    }
-
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const registeredUsers = JSON.parse(
-      localStorage.getItem('nexthire_registered_users') || JSON.stringify(DEFAULT_USERS)
-    ) as User[];
-
-    const foundUser = registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
-
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('nexthire_user', JSON.stringify(foundUser));
+      console.error('Better-Auth sign up error:', err);
+    } finally {
       setLoading(false);
-      return true;
     }
-
-    // If user is not found, automatically register them as a convenience for smooth mock demo
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      name: email.split('@')[0].toUpperCase(),
-      email,
-      role,
-      profile: {
-        skills: [],
-        bio: '',
-        title: '',
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(email.split('@')[0].toUpperCase())}`
-      }
-    };
-    const updatedList = [...registeredUsers, newUser];
-    localStorage.setItem('nexthire_registered_users', JSON.stringify(updatedList));
-    setUser(newUser);
-    localStorage.setItem('nexthire_user', JSON.stringify(newUser));
-    setLoading(false);
-    return true;
+    return false;
   };
 
-  const register = async (name: string, email: string, role: 'seeker' | 'recruiter' | 'admin'): Promise<boolean> => {
+  const logout = async () => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const registeredUsers = JSON.parse(
-      localStorage.getItem('nexthire_registered_users') || JSON.stringify(DEFAULT_USERS)
-    ) as User[];
-
-    const exists = registeredUsers.some((u) => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
-    if (exists) {
+    try {
+      await authClient.signOut();
+      setUser(null);
+    } catch (err) {
+      console.error('Better-Auth sign out error:', err);
+    } finally {
       setLoading(false);
-      return false;
     }
-
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      name,
-      email,
-      role,
-      profile: {
-        skills: [],
-        bio: '',
-        title: '',
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`
-      }
-    };
-
-    const updatedList = [...registeredUsers, newUser];
-    localStorage.setItem('nexthire_registered_users', JSON.stringify(updatedList));
-    setUser(newUser);
-    localStorage.setItem('nexthire_user', JSON.stringify(newUser));
-    setLoading(false);
-    return true;
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('nexthire_user');
   };
 
   const updateProfile = async (profileData: UserProfile): Promise<boolean> => {
     if (!user) return false;
-
-    // Send update request to database API
     try {
-      const res = await fetch('/api/auth/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
-          name: user.name,
-          profile: {
-            ...user.profile,
-            ...profileData
-          }
-        })
+      const res = await authClient.updateUser({
+        name: user.name,
+        image: profileData.avatar || user.profile.avatar,
+        avatar: profileData.avatar || user.profile.avatar,
+        companyName: profileData.companyName !== undefined ? profileData.companyName : user.profile.companyName,
+        companyWebsite: profileData.companyWebsite !== undefined ? profileData.companyWebsite : user.profile.companyWebsite,
+        bio: profileData.bio !== undefined ? profileData.bio : user.profile.bio,
+        title: profileData.title !== undefined ? profileData.title : user.profile.title,
+        skills: profileData.skills !== undefined ? profileData.skills.join(',') : user.profile.skills?.join(','),
+        resumeUrl: profileData.resumeUrl !== undefined ? profileData.resumeUrl : user.profile.resumeUrl,
       });
-      if (res.ok) {
-        const data = await res.json();
-        const dbUser = data.user;
-        const mappedUser: User = {
-          id: dbUser.id,
-          name: dbUser.name,
-          email: dbUser.email,
-          role: dbUser.role,
-          profile: {
-            avatar: dbUser.profilePic || dbUser.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(dbUser.name)}`,
-            companyName: dbUser.profile?.companyName || '',
-            companyWebsite: dbUser.profile?.companyWebsite || '',
-            bio: dbUser.profile?.bio || '',
-            title: dbUser.profile?.title || '',
-            skills: dbUser.profile?.skills || [],
-            resumeUrl: dbUser.profile?.resumeUrl || ''
-          }
-        };
-        setUser(mappedUser);
-        localStorage.setItem('nexthire_user', JSON.stringify(mappedUser));
+
+      if (!res.error) {
         return true;
       }
     } catch (err) {
-      console.error('Database update profile error, falling back to mock:', err);
+      console.error('Better-Auth update profile error:', err);
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const updatedUser = {
-      ...user,
-      profile: {
-        ...user.profile,
-        ...profileData
-      }
-    };
-
-    setUser(updatedUser);
-    localStorage.setItem('nexthire_user', JSON.stringify(updatedUser));
-
-    // Update in list
-    const registeredUsers = JSON.parse(
-      localStorage.getItem('nexthire_registered_users') || JSON.stringify(DEFAULT_USERS)
-    ) as User[];
-
-    const index = registeredUsers.findIndex((u) => u.id === user.id);
-    if (index !== -1) {
-      registeredUsers[index] = updatedUser;
-      localStorage.setItem('nexthire_registered_users', JSON.stringify(registeredUsers));
-    }
-
-    return true;
+    return false;
   };
 
   return (

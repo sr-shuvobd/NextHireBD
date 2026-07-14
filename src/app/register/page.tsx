@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, User, Sparkles, UploadCloud } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { authClient } from '@/lib/auth-client';
 
 function RegisterContent() {
   const router = useRouter();
@@ -64,29 +65,21 @@ function RegisterContent() {
         }
       }
 
-      // Register user in MongoDB
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role,
-          profilePic: uploadedPicUrl,
-        }),
+      // Register user using Better Auth
+      const signupRes = await authClient.signUp.email({
+        email,
+        password,
+        name,
+        image: uploadedPicUrl || undefined,
+        role,
+        avatar: uploadedPicUrl || undefined,
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
+      if (signupRes.data?.user) {
         toast.success('Registration successful!');
-        // Optionally save user to context or local storage here
         router.push(role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');
       } else {
-        toast.error(data.message || 'Registration failed');
+        toast.error(signupRes.error?.message || 'Registration failed');
       }
     } catch (err) {
       console.error('Registration Error:', err);

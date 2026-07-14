@@ -12,12 +12,8 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
 
-  // Read initial role or pre-fill seeker
-  const initialRole = (searchParams.get('role') as 'seeker' | 'recruiter' | 'admin') || 'seeker';
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'seeker' | 'recruiter' | 'admin'>(initialRole);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,12 +21,12 @@ function LoginContent() {
     setIsSubmitting(true);
 
     try {
-      const success = await login(email, role, password);
-      if (success) {
+      const loggedInRole = await login(email, undefined, password);
+      if (loggedInRole) {
         toast.success('Logged in successfully!');
-        router.push(role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');
+        router.push(loggedInRole === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');
       } else {
-        toast.error('Invalid credentials or role mismatch.');
+        toast.error('Invalid credentials.');
       }
     } catch (err) {
       console.error('Login Error:', err);
@@ -50,26 +46,6 @@ function LoginContent() {
           <h2 className="text-3xl font-extrabold text-[var(--text-primary)] mb-2">Welcome Back</h2>
           <p className="text-[var(--text-secondary)] text-[0.95rem]">Sign in to your account</p>
         </div>
-
-        {/* Role Selector Tabs */}
-        <div className="grid grid-cols-2 gap-2 bg-white/[0.03] p-1 rounded-[var(--border-radius-sm)] border border-[var(--border-color)]">
-          <button 
-            type="button" 
-            className={`p-2.5 rounded-[6px] text-[0.9rem] font-semibold cursor-pointer text-center transition-all duration-300 ${role === 'seeker' ? 'bg-[var(--accent-purple)] text-white shadow-[0_4px_12px_var(--accent-purple-glow)]' : 'text-[var(--text-secondary)]'}`}
-            onClick={() => setRole('seeker')}
-          >
-            Job Seeker
-          </button>
-          <button 
-            type="button" 
-            className={`p-2.5 rounded-[6px] text-[0.9rem] font-semibold cursor-pointer text-center transition-all duration-300 ${role === 'recruiter' ? 'bg-[var(--accent-purple)] text-white shadow-[0_4px_12px_var(--accent-purple-glow)]' : 'text-[var(--text-secondary)]'}`}
-            onClick={() => setRole('recruiter')}
-          >
-            Recruiter
-          </button>
-        </div>
-
-
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
@@ -123,7 +99,7 @@ function LoginContent() {
 
         <p className="text-center text-[var(--text-secondary)] text-[0.9rem] mt-2">
           Don&apos;t have an account?{' '}
-          <Link href={`/register?role=${role}`} className="text-[var(--accent-cyan)] font-semibold hover:underline hover:text-[var(--accent-cyan-hover)]">
+          <Link href="/register" className="text-[var(--accent-cyan)] font-semibold hover:underline hover:text-[var(--accent-cyan-hover)]">
             Register here
           </Link>
         </p>

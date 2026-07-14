@@ -4,9 +4,9 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
-    const { email, password, role } = await request.json();
+    const { email, password } = await request.json();
 
-    if (!email || !password || !role) {
+    if (!email || !password) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
@@ -15,9 +15,9 @@ export async function POST(request: Request) {
     const usersCollection = db.collection('users');
 
     // Find the user
-    const user = await usersCollection.findOne({ email, role });
+    const user = await usersCollection.findOne({ email });
     if (!user) {
-      return NextResponse.json({ message: 'User not found or incorrect role' }, { status: 401 });
+      return NextResponse.json({ message: 'User not found' }, { status: 401 });
     }
 
     // Verify password
