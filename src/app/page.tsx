@@ -18,9 +18,11 @@ import {
   Sparkles 
 } from 'lucide-react';
 import { getJobs } from '@/services/mockData';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
@@ -31,27 +33,37 @@ export default function Home() {
         const res = await fetch('http://localhost:5000/api/jobs');
         if (res.ok) {
           const dbJobs = await res.json();
-          const mappedJobs = dbJobs.map((dbJob: any) => ({
-            id: dbJob._id,
-            title: dbJob.title,
-            companyName: dbJob.companyName || 'Unknown Company',
-            companyLogo: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(dbJob.companyName || 'Job')}`,
-            location: dbJob.location,
-            workType: dbJob.location.toLowerCase().includes('remote') ? 'remote' : 'onsite',
-            jobType: dbJob.type.toLowerCase(),
-            salaryMin: parseInt(dbJob.salary?.split('-')[0]?.replace(/[^0-9]/g, '')) || 0,
-            salaryMax: parseInt(dbJob.salary?.split('-')[1]?.replace(/[^0-9]/g, '')) || 150000,
-            currency: 'BDT',
-            skillsRequired: dbJob.skillsRequired ? dbJob.skillsRequired.split(',').map((s: string) => s.trim()) : [],
-            category: 'Tech'
-          }));
-          setFeaturedJobs(mappedJobs.slice(0, 3));
+          if (dbJobs && dbJobs.length > 0) {
+            const mappedJobs = dbJobs.map((dbJob: any) => ({
+              id: dbJob._id,
+              title: dbJob.title,
+              companyName: dbJob.companyName || 'Unknown Company',
+              companyLogo: dbJob.companyLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(dbJob.companyName || 'Job')}`,
+              location: dbJob.location,
+              workType: dbJob.location.toLowerCase().includes('remote') ? 'remote' : 'onsite',
+              jobType: dbJob.type.toLowerCase(),
+              salaryMin: parseInt(dbJob.salary?.split('-')[0]?.replace(/[^0-9]/g, '')) || 0,
+              salaryMax: parseInt(dbJob.salary?.split('-')[1]?.replace(/[^0-9]/g, '')) || 150000,
+              currency: 'BDT',
+              skillsRequired: dbJob.skillsRequired ? dbJob.skillsRequired.split(',').map((s: string) => s.trim()) : [],
+              category: 'Tech'
+            }));
+            setFeaturedJobs(mappedJobs.slice(0, 3));
+          } else {
+            // Fallback to local mock jobs if DB is empty
+            const localJobs = getJobs();
+            setFeaturedJobs(localJobs.slice(0, 3));
+          }
         } else {
-          setFeaturedJobs([]);
+          // Fallback on response error
+          const localJobs = getJobs();
+          setFeaturedJobs(localJobs.slice(0, 3));
         }
       } catch (err) {
         console.error("Error fetching homepage featured jobs:", err);
-        setFeaturedJobs([]);
+        // Fallback on network/fetch error
+        const localJobs = getJobs();
+        setFeaturedJobs(localJobs.slice(0, 3));
       }
     };
     fetchFeaturedJobs();
@@ -221,24 +233,26 @@ export default function Home() {
       </section>
 
       {/* Call to Action */}
-      <section className="max-w-[1100px] mx-auto w-full px-6">
-        <div className="bg-gradient-to-r from-violet-500/15 to-cyan-500/15 border border-[var(--border-color-hover)] rounded-[var(--border-radius-lg)] p-10 md:p-14 grid grid-cols-1 md:grid-cols-[3fr_2fr] items-center gap-10 shadow-[var(--shadow-glass)]">
-          <div>
-            <h2 className="text-3xl font-extrabold text-[var(--text-primary)] mb-3">Accelerate Your Hiring Process</h2>
-            <p className="text-[var(--text-secondary)] leading-relaxed text-[1.1rem]">
-              Whether you are looking to hire senior engineers or looking for your next challenge, NextHireBD provides the best matching experience.
-            </p>
+      {!user && (
+        <section className="max-w-[1100px] mx-auto w-full px-6">
+          <div className="bg-gradient-to-r from-violet-500/15 to-cyan-500/15 border border-[var(--border-color-hover)] rounded-[var(--border-radius-lg)] p-10 md:p-14 grid grid-cols-1 md:grid-cols-[3fr_2fr] items-center gap-10 shadow-[var(--shadow-glass)]">
+            <div>
+              <h2 className="text-3xl font-extrabold text-[var(--text-primary)] mb-3">Accelerate Your Hiring Process</h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed text-[1.1rem]">
+                Whether you are looking to hire senior engineers or looking for your next challenge, NextHireBD provides the best matching experience.
+              </p>
+            </div>
+            <div className="flex gap-4 justify-center md:justify-end">
+              <Link href="/register?role=seeker" className="accent-btn">
+                Create Profile
+              </Link>
+              <Link href="/register?role=recruiter" className="outline-btn">
+                Post a Job
+              </Link>
+            </div>
           </div>
-          <div className="flex gap-4 justify-center md:justify-end">
-            <Link href="/register?role=seeker" className="accent-btn">
-              Create Profile
-            </Link>
-            <Link href="/register?role=recruiter" className="outline-btn">
-              Post a Job
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
