@@ -32,7 +32,12 @@ function JobsContent() {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/jobs');
+        const queryParams = new URLSearchParams();
+        if (search) queryParams.append('search', search);
+        if (location) queryParams.append('location', location);
+        if (selectedJobTypes.length > 0) queryParams.append('type', selectedJobTypes.join(','));
+
+        const res = await fetch(`http://localhost:5000/api/jobs?${queryParams.toString()}`);
         if (res.ok) {
           const dbJobs = await res.json();
           const mappedJobs = dbJobs.map((dbJob: any) => ({
@@ -50,40 +55,26 @@ function JobsContent() {
             category: 'Tech'
           }));
           setAllJobs(mappedJobs);
+          setFilteredJobs(mappedJobs);
         } else {
           setAllJobs([]);
+          setFilteredJobs([]);
         }
       } catch (err) {
         console.error("Error fetching jobs:", err);
         setAllJobs([]);
+        setFilteredJobs([]);
       }
     };
     fetchJobs();
-  }, []);
+  }, [search, location, selectedJobTypes]);
 
-  // Filter jobs logic
+  // Filter jobs logic for local-only filters
   useEffect(() => {
-    if (allJobs.length === 0) return;
-    
     const result = allJobs.filter((job) => {
-      const matchSearch = 
-        !search || 
-        job.title.toLowerCase().includes(search.toLowerCase()) || 
-        job.companyName.toLowerCase().includes(search.toLowerCase()) ||
-        job.skillsRequired.some(s => s.toLowerCase().includes(search.toLowerCase()));
-
-      const matchLocation = 
-        !location || 
-        job.location.toLowerCase().includes(location.toLowerCase()) ||
-        (location.toLowerCase() === 'remote' && job.workType === 'remote');
-
       const matchCategory = 
         !category || 
         job.category.toLowerCase() === category.toLowerCase();
-
-      const matchJobType = 
-        selectedJobTypes.length === 0 || 
-        selectedJobTypes.includes(job.jobType);
 
       const matchWorkType = 
         selectedWorkTypes.length === 0 || 
@@ -93,11 +84,11 @@ function JobsContent() {
         !minSalary || 
         job.salaryMax >= minSalary;
 
-      return matchSearch && matchLocation && matchCategory && matchJobType && matchWorkType && matchSalary;
+      return matchCategory && matchWorkType && matchSalary;
     });
 
     setFilteredJobs(result);
-  }, [allJobs, search, location, category, selectedJobTypes, selectedWorkTypes, minSalary]);
+  }, [allJobs, category, selectedWorkTypes, minSalary]);
 
   const handleJobTypeChange = (type: string) => {
     setSelectedJobTypes((prev) => 
