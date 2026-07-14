@@ -21,6 +21,10 @@ export default function Navbar() {
     }, 0);
   }, []);
 
+  if (pathname && pathname.startsWith('/dashboard/admin')) {
+    return null;
+  }
+
   const isActive = (path: string) => pathname === path;
 
   const navLinkClass = (path: string) => {
@@ -41,16 +45,20 @@ export default function Navbar() {
 
         {/* Navigation Links */}
         <nav className="hidden md:flex items-center gap-8">
-          <Link href="/" className={navLinkClass('/')}>
-            Home
-          </Link>
-          <Link href="/jobs" className={navLinkClass('/jobs')}>
-            Find Jobs
-          </Link>
+          {user?.role !== 'admin' && (
+            <>
+              <Link href="/" className={navLinkClass('/')}>
+                Home
+              </Link>
+              <Link href="/jobs" className={navLinkClass('/jobs')}>
+                Find Jobs
+              </Link>
+            </>
+          )}
           {user && (
             <Link 
-              href={user.role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter'} 
-              className={navLinkClass(user.role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter')}
+              href={user.role === 'seeker' ? '/dashboard/seeker' : user.role === 'recruiter' ? '/dashboard/recruiter' : '/dashboard/admin'} 
+              className={navLinkClass(user.role === 'seeker' ? '/dashboard/seeker' : user.role === 'recruiter' ? '/dashboard/recruiter' : '/dashboard/admin')}
             >
               Dashboard
             </Link>
@@ -81,7 +89,7 @@ export default function Navbar() {
                 
                 {dropdownOpen && (
                   <div className="absolute top-[110%] right-0 w-[200px] bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-[var(--border-radius-md)] shadow-[var(--shadow-glass)] p-2 flex flex-col gap-1 z-[110]" onMouseLeave={() => setDropdownOpen(false)}>
-                    <Link href={user.role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter'} className="p-2.5 rounded-[var(--border-radius-sm)] text-[var(--text-secondary)] text-[0.9rem] transition-all duration-300 flex items-center gap-2 hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]">
+                    <Link href={user.role === 'seeker' ? '/dashboard/seeker' : user.role === 'recruiter' ? '/dashboard/recruiter' : '/dashboard/admin'} className="p-2.5 rounded-[var(--border-radius-sm)] text-[var(--text-secondary)] text-[0.9rem] transition-all duration-300 flex items-center gap-2 hover:bg-white/[0.04] hover:text-[var(--text-primary)]">
                       <LayoutDashboard size={16} />
                       <span>My Dashboard</span>
                     </Link>
@@ -114,15 +122,19 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed top-[72px] left-0 w-full bg-[var(--bg-primary)] border-b border-[var(--border-color)] p-6 flex flex-col gap-5 z-[99]">
-          <Link href="/" className="text-[var(--text-secondary)] font-medium text-[1.1rem] hover:text-[var(--text-primary)]" onClick={() => setMobileMenuOpen(false)}>
-            Home
-          </Link>
-          <Link href="/jobs" className="text-[var(--text-secondary)] font-medium text-[1.1rem] hover:text-[var(--text-primary)]" onClick={() => setMobileMenuOpen(false)}>
-            Find Jobs
-          </Link>
+          {user?.role !== 'admin' && (
+            <>
+              <Link href="/" className="text-[var(--text-secondary)] font-medium text-[1.1rem] hover:text-[var(--text-primary)]" onClick={() => setMobileMenuOpen(false)}>
+                Home
+              </Link>
+              <Link href="/jobs" className="text-[var(--text-secondary)] font-medium text-[1.1rem] hover:text-[var(--text-primary)]" onClick={() => setMobileMenuOpen(false)}>
+                Find Jobs
+              </Link>
+            </>
+          )}
           {user && (
             <Link 
-              href={user.role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter'} 
+              href={user.role === 'seeker' ? '/dashboard/seeker' : user.role === 'recruiter' ? '/dashboard/recruiter' : '/dashboard/admin'} 
               className="text-[var(--text-secondary)] font-medium text-[1.1rem] hover:text-[var(--text-primary)]"
               onClick={() => setMobileMenuOpen(false)}
             >

@@ -3,8 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { Briefcase, Globe, Mail } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname && pathname.startsWith('/dashboard/admin')) {
+    return null;
+  }
   return (
     <footer className="w-full bg-[#09090b] border-t border-white/8 px-6 py-12 text-[#94a3b8] text-[0.95rem] mt-auto">
       <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-10">
