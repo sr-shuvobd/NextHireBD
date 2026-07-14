@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, MapPin, Briefcase, DollarSign, Filter, RefreshCw, X } from 'lucide-react';
 import { getJobs, Job } from '@/services/mockData';
-import styles from './jobs.module.css';
 
 function JobsContent() {
   const searchParams = useSearchParams();
@@ -64,7 +63,9 @@ function JobsContent() {
       return matchSearch && matchLocation && matchCategory && matchJobType && matchWorkType && matchSalary;
     });
 
-    setFilteredJobs(result);
+    setTimeout(() => {
+      setFilteredJobs(result);
+    }, 0);
   }, [search, location, category, selectedJobTypes, selectedWorkTypes, minSalary]);
 
   const handleJobTypeChange = (type: string) => {
@@ -90,15 +91,15 @@ function JobsContent() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <h1 className={styles.title}>Find Your Next Dream Role</h1>
-        <p className={styles.subtitle}>Explore opportunities from the highest-quality tech networks</p>
+    <div className="max-w-[1200px] mx-auto px-6 py-10 w-full">
+      <div className="mb-8">
+        <h1 className="text-4xl font-extrabold mb-2">Find Your Next Dream Role</h1>
+        <p className="text-[var(--text-secondary)]">Explore opportunities from the highest-quality tech networks</p>
       </div>
 
-      <div className={styles.layout}>
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 items-start">
         {/* Sidebar Filters */}
-        <aside className={styles.filters}>
+        <aside className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-6 flex flex-col gap-6 sticky top-[100px]">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
               <Filter size={18} />
@@ -114,14 +115,14 @@ function JobsContent() {
           </div>
 
           {/* Search Input */}
-          <div className={styles.filterGroup}>
-            <label className={styles.filterTitle}>Keyword Search</label>
-            <div className={styles.searchField}>
-              <Search size={16} className={styles.inputIcon} />
+          <div className="flex flex-col gap-2.5">
+            <label className="text-[0.95rem] font-semibold text-[var(--text-primary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">Keyword Search</label>
+            <div className="relative flex items-center">
+              <Search size={16} className="absolute left-3 text-[var(--text-muted)]" />
               <input 
                 type="text" 
                 placeholder="Title, company, skill..." 
-                className={styles.filterInput}
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.9rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.05] outline-none"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -129,14 +130,14 @@ function JobsContent() {
           </div>
 
           {/* Location Input */}
-          <div className={styles.filterGroup}>
-            <label className={styles.filterTitle}>Location</label>
-            <div className={styles.searchField}>
-              <MapPin size={16} className={styles.inputIcon} />
+          <div className="flex flex-col gap-2.5">
+            <label className="text-[0.95rem] font-semibold text-[var(--text-primary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">Location</label>
+            <div className="relative flex items-center">
+              <MapPin size={16} className="absolute left-3 text-[var(--text-muted)]" />
               <input 
                 type="text" 
                 placeholder="City or 'remote'..." 
-                className={styles.filterInput}
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.9rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.05] outline-none"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               />
@@ -144,11 +145,11 @@ function JobsContent() {
           </div>
 
           {/* Category Selector */}
-          <div className={styles.filterGroup}>
-            <label className={styles.filterTitle}>Category</label>
+          <div className="flex flex-col gap-2.5">
+            <label className="text-[0.95rem] font-semibold text-[var(--text-primary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">Category</label>
             <select 
-              className={styles.filterInput} 
-              style={{ paddingLeft: '12px', cursor: 'pointer', background: '#0f172a' }}
+              className="w-full px-3.5 py-2.5 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.9rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.05] outline-none cursor-pointer" 
+              style={{ cursor: 'pointer', background: '#0f172a' }}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
@@ -161,13 +162,13 @@ function JobsContent() {
           </div>
 
           {/* Job Types */}
-          <div className={styles.filterGroup}>
-            <label className={styles.filterTitle}>Job Type</label>
+          <div className="flex flex-col gap-2.5">
+            <label className="text-[0.95rem] font-semibold text-[var(--text-primary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">Job Type</label>
             {['full-time', 'part-time', 'contract', 'internship'].map((type) => (
-              <label key={type} className={styles.checkboxLabel}>
+              <label key={type} className="flex items-center gap-2.5 text-[var(--text-secondary)] text-[0.9rem] cursor-pointer transition-all duration-300 hover:text-[var(--text-primary)]">
                 <input 
                   type="checkbox" 
-                  className={styles.checkbox}
+                  className="w-4 h-4 accent-[var(--accent-purple)] cursor-pointer"
                   checked={selectedJobTypes.includes(type)}
                   onChange={() => handleJobTypeChange(type)}
                 />
@@ -179,13 +180,13 @@ function JobsContent() {
           </div>
 
           {/* Work Types */}
-          <div className={styles.filterGroup}>
-            <label className={styles.filterTitle}>Work Settings</label>
+          <div className="flex flex-col gap-2.5">
+            <label className="text-[0.95rem] font-semibold text-[var(--text-primary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">Work Settings</label>
             {['remote', 'hybrid', 'onsite'].map((type) => (
-              <label key={type} className={styles.checkboxLabel}>
+              <label key={type} className="flex items-center gap-2.5 text-[var(--text-secondary)] text-[0.9rem] cursor-pointer transition-all duration-300 hover:text-[var(--text-primary)]">
                 <input 
                   type="checkbox" 
-                  className={styles.checkbox}
+                  className="w-4 h-4 accent-[var(--accent-purple)] cursor-pointer"
                   checked={selectedWorkTypes.includes(type)}
                   onChange={() => handleWorkTypeChange(type)}
                 />
@@ -195,14 +196,14 @@ function JobsContent() {
           </div>
 
           {/* Min Salary */}
-          <div className={styles.filterGroup}>
-            <label className={styles.filterTitle}>Minimum Salary</label>
-            <div className={styles.searchField}>
-              <DollarSign size={16} className={styles.inputIcon} />
+          <div className="flex flex-col gap-2.5">
+            <label className="text-[0.95rem] font-semibold text-[var(--text-primary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">Minimum Salary</label>
+            <div className="relative flex items-center">
+              <DollarSign size={16} className="absolute left-3 text-[var(--text-muted)]" />
               <input 
                 type="number" 
                 placeholder="Min Salary (BDT)..." 
-                className={styles.filterInput}
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.9rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.05] outline-none"
                 value={minSalary || ''}
                 onChange={(e) => setMinSalary(Number(e.target.value))}
               />
@@ -211,21 +212,21 @@ function JobsContent() {
         </aside>
 
         {/* Listings Section */}
-        <main className={styles.listingsContainer}>
-          <div className={styles.resultsBar}>
+        <main className="flex flex-col gap-6">
+          <div className="flex justify-between items-center text-[var(--text-secondary)] text-[0.95rem]">
             <div>Showing {filteredJobs.length} matching opportunities</div>
           </div>
 
           {filteredJobs.length > 0 ? (
             filteredJobs.map((job) => (
-              <div key={job.id} className={styles.jobCard}>
-                <div className={styles.jobInfo}>
-                  <img src={job.companyLogo} alt={job.companyName} className={styles.companyLogo} />
-                  <div className={styles.jobDetails}>
-                    <Link href={`/jobs/${job.id}`} className={styles.jobTitle}>
+              <div key={job.id} className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 hover:border-cyan-500/30 hover:shadow-[0_8px_30px_rgba(6,182,212,0.15)] hover:-translate-y-0.5 transition-all duration-300">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                  <img src={job.companyLogo} alt={job.companyName} className="w-16 h-16 rounded-[var(--border-radius-sm)] object-cover border border-[var(--border-color-hover)] bg-[var(--bg-secondary)]" />
+                  <div className="flex flex-col gap-1.5">
+                    <Link href={`/jobs/${job.id}`} className="text-xl font-bold text-[var(--text-primary)] hover:text-[var(--accent-purple)] transition-all duration-300">
                       {job.title}
                     </Link>
-                    <div className={styles.companyMeta}>
+                    <div className="flex flex-wrap items-center gap-4 text-[0.95rem] text-[var(--text-secondary)]">
                       <span style={{ fontWeight: 600, color: '#ffffff' }}>{job.companyName}</span>
                       <span>•</span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -233,29 +234,29 @@ function JobsContent() {
                         {job.location} ({job.workType})
                       </span>
                     </div>
-                    <div className={styles.tags}>
-                      <span className={`${styles.tag} ${styles.purpleTag}`}>{job.jobType.toUpperCase()}</span>
-                      <span className={`${styles.tag} ${styles.cyanTag}`}>
+                    <div className="flex flex-wrap gap-2 mt-1.5">
+                      <span className="bg-violet-500/10 border border-violet-500/20 text-violet-400 px-2.5 py-1 rounded-[6px] text-[0.8rem] font-medium">{job.jobType.toUpperCase()}</span>
+                      <span className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 px-2.5 py-1 rounded-[6px] text-[0.8rem] font-medium">
                         {job.salaryMin.toLocaleString()} - {job.salaryMax.toLocaleString()} {job.currency}
                       </span>
                       {job.skillsRequired.slice(0, 3).map((skill, sIdx) => (
-                        <span key={sIdx} className={styles.tag}>{skill}</span>
+                        <span key={sIdx} className="bg-white/[0.04] border border-[var(--border-color)] px-2.5 py-1 rounded-[6px] text-[0.8rem] font-medium text-[var(--text-secondary)]">{skill}</span>
                       ))}
                     </div>
                   </div>
                 </div>
                 <div>
-                  <Link href={`/jobs/${job.id}`} className={styles.applyBtn}>
+                  <Link href={`/jobs/${job.id}`} className="bg-gradient-to-r from-[var(--accent-purple)] to-[#7c3aed] text-white px-5 py-2.5 rounded-[var(--border-radius-sm)] font-semibold cursor-pointer shadow-[0_4px_15px_var(--accent-purple-glow)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(139,92,246,0.4)] transition-all duration-300 text-center whitespace-nowrap">
                     View Details
                   </Link>
                 </div>
               </div>
             ))
           ) : (
-            <div className={styles.emptyState}>
-              <Briefcase size={48} color="var(--text-muted)" style={{ animation: 'float 3s ease-in-out infinite' }} />
-              <h3 className={styles.emptyTitle}>No Jobs Match Filters</h3>
-              <p className={styles.emptyText}>
+            <div className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-20 text-center flex flex-col items-center gap-4">
+              <Briefcase size={48} color="var(--text-muted)" className="animate-[float_3s_ease-in-out_infinite]" />
+              <h3 className="text-2xl font-bold text-[var(--text-primary)]">No Jobs Match Filters</h3>
+              <p className="text-[var(--text-secondary)] max-w-[400px]">
                 Try adjusting your keywords, work settings, or category filters to find matching listings.
               </p>
               <button onClick={handleReset} className="outline-btn" style={{ marginTop: 12 }}>

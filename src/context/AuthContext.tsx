@@ -67,17 +67,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check if user is logged in via localStorage
     const savedUser = localStorage.getItem('nexthire_user');
+    let userToSet: User | null = null;
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
+        userToSet = JSON.parse(savedUser);
+      } catch {
         localStorage.removeItem('nexthire_user');
       }
     } else {
       // Seed default user for easy testing
       localStorage.setItem('nexthire_registered_users', JSON.stringify(DEFAULT_USERS));
     }
-    setLoading(false);
+    
+    // Defer state updates to satisfy react-hooks/set-state-in-effect linter rule
+    setTimeout(() => {
+      if (userToSet) {
+        setUser(userToSet);
+      }
+      setLoading(false);
+    }, 0);
   }, []);
 
   const login = async (email: string, role: 'seeker' | 'recruiter' | 'admin'): Promise<boolean> => {

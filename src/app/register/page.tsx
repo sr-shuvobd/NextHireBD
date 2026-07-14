@@ -4,7 +4,7 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, User, Sparkles, UploadCloud } from 'lucide-react';
-import styles from '../auth.module.css';
+import { toast } from 'react-toastify';
 
 function RegisterContent() {
   const router = useRouter();
@@ -20,7 +20,6 @@ function RegisterContent() {
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -33,7 +32,6 @@ function RegisterContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setErrorMsg('');
 
     try {
       let uploadedPicUrl = null;
@@ -52,7 +50,9 @@ function RegisterContent() {
         if (imgbbData.success) {
           uploadedPicUrl = imgbbData.data.url;
         } else {
-          throw new Error('Image upload failed');
+          toast.error('Image upload failed');
+          setIsSubmitting(false);
+          return;
         }
       }
 
@@ -74,62 +74,59 @@ function RegisterContent() {
       const data = await res.json();
 
       if (res.ok) {
+        toast.success('Registration successful!');
         // Optionally save user to context or local storage here
         router.push(role === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');
       } else {
-        setErrorMsg(data.message || 'Registration failed');
+        toast.error(data.message || 'Registration failed');
       }
     } catch (err) {
       console.error('Registration Error:', err);
-      setErrorMsg('Something went wrong. Please try again.');
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.authCard}>
-        <div className={styles.header}>
+    <div className="min-h-[80vh] flex items-center justify-center px-6 py-10 w-full">
+      <div className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-10 max-w-[480px] w-full shadow-[var(--shadow-glass)] flex flex-col gap-6">
+        <div className="text-center">
           <div style={{ display: 'inline-flex', padding: 8, background: 'rgba(6, 182, 212, 0.1)', borderRadius: 50, color: 'var(--accent-cyan)', marginBottom: 12 }}>
             <Sparkles size={20} />
           </div>
-          <h2 className={styles.title}>Get Started</h2>
-          <p className={styles.subtitle}>Create your profile to join NextHireBD</p>
+          <h2 className="text-3xl font-extrabold text-[var(--text-primary)] mb-2">Get Started</h2>
+          <p className="text-[var(--text-secondary)] text-[0.95rem]">Create your profile to join NextHireBD</p>
         </div>
 
         {/* Role Selector Tabs */}
-        <div className={styles.roleSelector}>
+        <div className="grid grid-cols-2 gap-2 bg-white/[0.03] p-1 rounded-[var(--border-radius-sm)] border border-[var(--border-color)]">
           <button 
             type="button" 
-            className={role === 'seeker' ? `${styles.roleBtn} ${styles.activeRole}` : styles.roleBtn}
+            className={`p-2.5 rounded-[6px] text-[0.9rem] font-semibold cursor-pointer text-center transition-all duration-300 ${role === 'seeker' ? 'bg-[var(--accent-purple)] text-white shadow-[0_4px_12px_var(--accent-purple-glow)]' : 'text-[var(--text-secondary)]'}`}
             onClick={() => setRole('seeker')}
           >
             Job Seeker
           </button>
           <button 
             type="button" 
-            className={role === 'recruiter' ? `${styles.roleBtn} ${styles.activeRole}` : styles.roleBtn}
+            className={`p-2.5 rounded-[6px] text-[0.9rem] font-semibold cursor-pointer text-center transition-all duration-300 ${role === 'recruiter' ? 'bg-[var(--accent-purple)] text-white shadow-[0_4px_12px_var(--accent-purple-glow)]' : 'text-[var(--text-secondary)]'}`}
             onClick={() => setRole('recruiter')}
           >
             Recruiter
           </button>
         </div>
 
-        {errorMsg && (
-          <div className={styles.errorBox}>
-            {errorMsg}
-          </div>
-        )}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Profile Picture Upload */}
-          <div className={styles.formGroup} style={{ alignItems: 'center', marginBottom: 8 }}>
-            <label htmlFor="profilePic" className={styles.avatarUpload}>
+          <div className="flex flex-col gap-2 items-center mb-2">
+            <label htmlFor="profilePic" className="w-[90px] h-[90px] rounded-full border-2 border-dashed border-[var(--border-color)] flex items-center justify-center cursor-pointer overflow-hidden transition-all duration-300 bg-white/[0.02] hover:border-[var(--accent-purple)] hover:bg-[var(--accent-purple)]/5">
               {profilePicUrl ? (
-                <img src={profilePicUrl} alt="Profile preview" className={styles.avatarPreview} />
+                <img src={profilePicUrl} alt="Profile preview" className="w-full h-full object-cover" />
               ) : (
-                <div className={styles.avatarPlaceholder}>
+                <div className="flex flex-col items-center gap-1 text-[var(--text-muted)] text-[0.75rem]">
                   <UploadCloud size={24} />
                   <span>Photo</span>
                 </div>
@@ -143,14 +140,15 @@ function RegisterContent() {
               onChange={handleFileChange} 
             />
           </div>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Full Name</label>
-            <div className={styles.inputWrapper}>
-              <User size={18} className={styles.inputIcon} />
+          
+          <div className="flex flex-col gap-2">
+            <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Full Name</label>
+            <div className="flex items-center gap-3 bg-white/[0.02] border border-[var(--border-color)] rounded-[var(--border-radius-sm)] px-3.5 py-3 transition-all duration-300 focus-within:border-[var(--accent-purple)] focus-within:bg-white/[0.04]">
+              <User size={18} className="text-[var(--text-muted)]" />
               <input 
                 type="text" 
                 placeholder="John Doe" 
-                className={styles.input}
+                className="w-full text-[var(--text-primary)] text-[0.95rem] bg-transparent border-none outline-none placeholder-[var(--text-muted)]"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -158,14 +156,14 @@ function RegisterContent() {
             </div>
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Email Address</label>
-            <div className={styles.inputWrapper}>
-              <Mail size={18} className={styles.inputIcon} />
+          <div className="flex flex-col gap-2">
+            <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Email Address</label>
+            <div className="flex items-center gap-3 bg-white/[0.02] border border-[var(--border-color)] rounded-[var(--border-radius-sm)] px-3.5 py-3 transition-all duration-300 focus-within:border-[var(--accent-purple)] focus-within:bg-white/[0.04]">
+              <Mail size={18} className="text-[var(--text-muted)]" />
               <input 
                 type="email" 
                 placeholder="you@example.com" 
-                className={styles.input}
+                className="w-full text-[var(--text-primary)] text-[0.95rem] bg-transparent border-none outline-none placeholder-[var(--text-muted)]"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -173,14 +171,14 @@ function RegisterContent() {
             </div>
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Password</label>
-            <div className={styles.inputWrapper}>
-              <Lock size={18} className={styles.inputIcon} />
+          <div className="flex flex-col gap-2">
+            <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Password</label>
+            <div className="flex items-center gap-3 bg-white/[0.02] border border-[var(--border-color)] rounded-[var(--border-radius-sm)] px-3.5 py-3 transition-all duration-300 focus-within:border-[var(--accent-purple)] focus-within:bg-white/[0.04]">
+              <Lock size={18} className="text-[var(--text-muted)]" />
               <input 
                 type="password" 
                 placeholder="Min 6 characters" 
-                className={styles.input}
+                className="w-full text-[var(--text-primary)] text-[0.95rem] bg-transparent border-none outline-none placeholder-[var(--text-muted)]"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={6}
@@ -189,16 +187,16 @@ function RegisterContent() {
             </div>
           </div>
 
-          <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+          <button type="submit" className="bg-gradient-to-r from-[var(--accent-purple)] to-[#7c3aed] text-white p-3.5 rounded-[var(--border-radius-sm)] font-semibold cursor-pointer shadow-[0_4px_15px_var(--accent-purple-glow)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(139,92,246,0.4)] disabled:bg-[var(--text-muted)] disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all duration-300 text-center text-[1rem]" disabled={isSubmitting}>
             {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
-        <div className={styles.divider}>
+        <div className="flex items-center text-center my-3 text-[var(--text-muted)] text-[0.85rem] before:content-[''] before:flex-1 before:border-b before:border-[var(--border-color)] before:mr-3 after:content-[''] after:flex-1 after:border-b after:border-[var(--border-color)] after:ml-3">
           <span>or continue with</span>
         </div>
 
-        <button type="button" className={styles.googleBtn}>
+        <button type="button" className="flex items-center justify-center gap-3 w-full p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--border-radius-sm)] text-[var(--text-primary)] font-semibold text-[0.95rem] cursor-pointer hover:bg-white/[0.05] hover:border-[var(--border-color-hover)] transition-all duration-300 mb-4">
           <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -208,9 +206,9 @@ function RegisterContent() {
           Sign in with Google
         </button>
 
-        <p className={styles.footerText}>
+        <p className="text-center text-[var(--text-secondary)] text-[0.9rem] mt-2">
           Already have an account?{' '}
-          <Link href={`/login?role=${role}`} className={styles.footerLink}>
+          <Link href={`/login?role=${role}`} className="text-[var(--accent-cyan)] font-semibold hover:underline hover:text-[var(--accent-cyan-hover)]">
             Sign in here
           </Link>
         </p>

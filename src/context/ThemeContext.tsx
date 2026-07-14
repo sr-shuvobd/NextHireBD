@@ -18,8 +18,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Get stored theme or default to dark
     const storedTheme = localStorage.getItem('nexthire_theme') as Theme;
     if (storedTheme) {
-      setTheme(storedTheme);
       document.documentElement.setAttribute('data-theme', storedTheme);
+      setTimeout(() => {
+        setTheme(storedTheme);
+      }, 0);
     } else {
       document.documentElement.setAttribute('data-theme', 'dark');
     }

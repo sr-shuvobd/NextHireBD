@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { getJobById, applyForJob, getApplications } from '@/services/mockData';
 import { useAuth } from '@/context/AuthContext';
-import styles from './details.module.css';
 
 export default function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -37,7 +36,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
   if (!job) {
     return (
-      <div className={styles.container}>
+      <div className="max-w-[1100px] mx-auto px-6 py-10 w-full">
         <div style={{ textAlign: 'center', padding: '100px 24px' }}>
           <h2>Job Not Found</h2>
           <p style={{ color: 'var(--text-secondary)', margin: '16px 0 24px' }}>
@@ -82,23 +81,23 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   });
 
   return (
-    <div className={styles.container}>
+    <div className="max-w-[1100px] mx-auto px-6 py-10 w-full">
       {/* Back Button */}
-      <Link href="/jobs" className={styles.backBtn}>
+      <Link href="/jobs" className="inline-flex items-center gap-2 text-[var(--text-secondary)] font-medium mb-6 hover:text-[var(--text-primary)] hover:-translate-x-1 transition-all duration-300">
         <ArrowLeft size={16} />
         Back to Jobs
       </Link>
 
-      <div className={styles.layout}>
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 items-start">
         {/* Main Details Card */}
-        <main className={styles.mainCard}>
+        <main className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-6 md:p-10 shadow-[var(--shadow-glass)]">
           {/* Header */}
-          <div className={styles.header}>
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-6 border-b border-[var(--border-color)] pb-8 mb-8">
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              <img src={job.companyLogo} alt={job.companyName} className={styles.companyLogo} />
+              <img src={job.companyLogo} alt={job.companyName} className="w-20 h-20 rounded-[var(--border-radius-sm)] object-cover border border-[var(--border-color-hover)] bg-[var(--bg-secondary)]" />
               <div>
-                <h1 className={styles.title}>{job.title}</h1>
-                <div className={styles.companyMeta}>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-[var(--text-primary)] leading-tight mb-2">{job.title}</h1>
+                <div className="flex items-center gap-4 text-[1.1rem] text-[var(--text-secondary)]">
                   <span style={{ fontWeight: 600, color: '#ffffff' }}>{job.companyName}</span>
                   <span>•</span>
                   <span>{job.category}</span>
@@ -108,17 +107,17 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Markdown Content (Rendered as text styling) */}
-          <div className={styles.richContent}>
+          <div className="leading-relaxed text-[var(--text-primary)] text-[1.05rem]">
             {/* Split description paragraphs */}
             {job.description.split('\n\n').map((paragraph, index) => {
               if (paragraph.trim().startsWith('###')) {
-                return <h3 key={index}>{paragraph.replace('###', '').trim()}</h3>;
+                return <h3 key={index} className="text-xl font-bold mt-8 mb-4 border-l-[3px] border-[var(--accent-cyan)] pl-3 text-[var(--text-primary)]">{paragraph.replace('###', '').trim()}</h3>;
               }
               if (paragraph.trim().startsWith('*')) {
                 return (
-                  <ul key={index}>
+                  <ul key={index} className="pl-5 mb-6 flex flex-col gap-2 list-disc">
                     {paragraph.split('\n').map((li, liIdx) => (
-                      <li key={liIdx}>{li.replace('*', '').trim()}</li>
+                      <li key={liIdx} className="text-[var(--text-secondary)]">{li.replace('*', '').trim()}</li>
                     ))}
                   </ul>
                 );
@@ -128,63 +127,63 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Skills Required Section */}
-          <div className={styles.skillsGroup}>
-            <h4 className={styles.skillsTitle}>Skills Required</h4>
-            <div className={styles.skills}>
+          <div className="mt-10 border-t border-[var(--border-color)] pt-8">
+            <h4 className="text-[1.15rem] font-bold mb-4">Skills Required</h4>
+            <div className="flex flex-wrap gap-2">
               {job.skillsRequired.map((skill, index) => (
-                <span key={index} className={styles.skillChip}>{skill}</span>
+                <span key={index} className="bg-white/[0.04] border border-[var(--border-color)] px-3.5 py-1.5 rounded-full text-[0.85rem] font-medium">{skill}</span>
               ))}
             </div>
           </div>
         </main>
 
         {/* Sticky Sidebar */}
-        <aside className={styles.sidebar}>
-          <h3 className={styles.sidebarTitle}>Job Summary</h3>
+        <aside className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-8 shadow-[var(--shadow-glass)] flex flex-col gap-6 sticky top-[100px]">
+          <h3 className="text-xl font-bold text-[var(--text-primary)] border-b border-[var(--border-color)] pb-3">Job Summary</h3>
           
-          <div className={styles.metaItem}>
-            <div className={styles.metaIcon}><DollarSign size={20} /></div>
+          <div className="flex gap-4 items-center">
+            <div className="w-11 h-11 rounded-[var(--border-radius-sm)] bg-[var(--accent-cyan)]/8 text-[var(--accent-cyan)] flex items-center justify-center"><DollarSign size={20} /></div>
             <div>
-              <div className={styles.metaLabel}>Salary Offer</div>
-              <div className={styles.metaValue}>
+              <div className="text-[0.85rem] text-[var(--text-secondary)] uppercase tracking-wider">Salary Offer</div>
+              <div className="text-[1rem] font-semibold text-[var(--text-primary)]">
                 {job.salaryMin.toLocaleString()} - {job.salaryMax.toLocaleString()} {job.currency} / Mo
               </div>
             </div>
           </div>
 
-          <div className={styles.metaItem}>
-            <div className={styles.metaIcon}><MapPin size={20} /></div>
+          <div className="flex gap-4 items-center">
+            <div className="w-11 h-11 rounded-[var(--border-radius-sm)] bg-[var(--accent-cyan)]/8 text-[var(--accent-cyan)] flex items-center justify-center"><MapPin size={20} /></div>
             <div>
-              <div className={styles.metaLabel}>Location</div>
-              <div className={styles.metaValue}>{job.location}</div>
+              <div className="text-[0.85rem] text-[var(--text-secondary)] uppercase tracking-wider">Location</div>
+              <div className="text-[1rem] font-semibold text-[var(--text-primary)]">{job.location}</div>
             </div>
           </div>
 
-          <div className={styles.metaItem}>
-            <div className={styles.metaIcon}><Briefcase size={20} /></div>
+          <div className="flex gap-4 items-center">
+            <div className="w-11 h-11 rounded-[var(--border-radius-sm)] bg-[var(--accent-cyan)]/8 text-[var(--accent-cyan)] flex items-center justify-center"><Briefcase size={20} /></div>
             <div>
-              <div className={styles.metaLabel}>Job Type</div>
-              <div className={styles.metaValue} style={{ textTransform: 'capitalize' }}>
+              <div className="text-[0.85rem] text-[var(--text-secondary)] uppercase tracking-wider">Job Type</div>
+              <div className="text-[1rem] font-semibold text-[var(--text-primary)]" style={{ textTransform: 'capitalize' }}>
                 {job.jobType.replace('-', ' ')}
               </div>
             </div>
           </div>
 
-          <div className={styles.metaItem}>
-            <div className={styles.metaIcon}><Globe size={20} /></div>
+          <div className="flex gap-4 items-center">
+            <div className="w-11 h-11 rounded-[var(--border-radius-sm)] bg-[var(--accent-cyan)]/8 text-[var(--accent-cyan)] flex items-center justify-center"><Globe size={20} /></div>
             <div>
-              <div className={styles.metaLabel}>Work Setting</div>
-              <div className={styles.metaValue} style={{ textTransform: 'capitalize' }}>
+              <div className="text-[0.85rem] text-[var(--text-secondary)] uppercase tracking-wider">Work Setting</div>
+              <div className="text-[1rem] font-semibold text-[var(--text-primary)]" style={{ textTransform: 'capitalize' }}>
                 {job.workType}
               </div>
             </div>
           </div>
 
-          <div className={styles.metaItem}>
-            <div className={styles.metaIcon}><Calendar size={20} /></div>
+          <div className="flex gap-4 items-center">
+            <div className="w-11 h-11 rounded-[var(--border-radius-sm)] bg-[var(--accent-cyan)]/8 text-[var(--accent-cyan)] flex items-center justify-center"><Calendar size={20} /></div>
             <div>
-              <div className={styles.metaLabel}>Date Posted</div>
-              <div className={styles.metaValue}>{formattedDate}</div>
+              <div className="text-[0.85rem] text-[var(--text-secondary)] uppercase tracking-wider">Date Posted</div>
+              <div className="text-[1rem] font-semibold text-[var(--text-primary)]">{formattedDate}</div>
             </div>
           </div>
 
@@ -215,16 +214,16 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
       {/* Application Popup Modal */}
       {modalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <button className={styles.closeBtn} onClick={() => setModalOpen(false)}>
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-[8px] flex items-center justify-center z-[1000] p-6">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-[var(--border-radius-md)] shadow-[var(--shadow-glass)] max-w-[550px] w-full p-8 relative animate-[float_0.3s_ease-out]">
+            <button className="absolute top-5 right-5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" onClick={() => setModalOpen(false)}>
               <X size={20} />
             </button>
 
             {!success ? (
               <>
-                <h3 className={styles.modalTitle}>Apply for {job.title}</h3>
-                <p className={styles.modalSubtitle}>at {job.companyName}</p>
+                <h3 className="text-2xl font-extrabold mb-2">Apply for {job.title}</h3>
+                <p className="text-[var(--text-secondary)] text-[0.95rem] mb-6">at {job.companyName}</p>
 
                 {errorMsg && (
                   <div style={{ padding: 12, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 8, color: 'var(--error)', marginBottom: 16, fontSize: '0.9rem' }}>
@@ -233,8 +232,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                 )}
 
                 <form onSubmit={handleApplySubmit}>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Resume URL</label>
+                  <div className="flex flex-col gap-2 mb-5">
+                    <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Resume URL</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-sm)', padding: '10px 14px' }}>
                       <FileText size={18} color="var(--accent-cyan)" />
                       <input 
@@ -246,15 +245,15 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                       />
                     </div>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      We used your profile's uploaded resume. Edit above if you want to provide another link.
+                      We used your profile&apos;s uploaded resume. Edit above if you want to provide another link.
                     </span>
                   </div>
 
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Cover Letter</label>
+                  <div className="flex flex-col gap-2 mb-5">
+                    <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Cover Letter</label>
                     <textarea 
                       placeholder="Write a brief cover letter introducing yourself..."
-                      className={styles.textarea}
+                      className="w-full min-h-[120px] bg-white/[0.02] border border-[var(--border-color)] rounded-[var(--border-radius-sm)] p-3 text-[var(--text-primary)] text-[0.95rem] resize-y transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.05] outline-none"
                       value={coverLetter}
                       onChange={(e) => setCoverLetter(e.target.value)}
                       required
@@ -272,12 +271,12 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                 </form>
               </>
             ) : (
-              <div className={styles.successState}>
-                <div className={styles.successIcon}>
+              <div className="text-center py-6 flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
                   <CheckCircle2 size={36} />
                 </div>
-                <h3 className={styles.modalTitle}>Application Submitted!</h3>
-                <p className={styles.modalSubtitle} style={{ marginBottom: 16 }}>
+                <h3 className="text-2xl font-extrabold mb-2">Application Submitted!</h3>
+                <p className="text-[var(--text-secondary)] text-[0.95rem] mb-6" style={{ marginBottom: 16 }}>
                   Your application for **{job.title}** at **{job.companyName}** has been sent successfully.
                 </p>
                 <button 

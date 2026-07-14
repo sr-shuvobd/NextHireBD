@@ -5,6 +5,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -31,6 +33,7 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
+            <ToastContainer position="bottom-right" theme="dark" />
           </AuthProvider>
         </ThemeProvider>
       </body>
