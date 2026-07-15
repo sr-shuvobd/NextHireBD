@@ -25,7 +25,7 @@ function LoginContent() {
       const loggedInRole = await login(email, undefined, password);
       if (loggedInRole) {
         toast.success('Logged in successfully!');
-        router.push(loggedInRole === 'seeker' ? '/dashboard/seeker' : '/dashboard/recruiter');
+        router.push(`/dashboard/${loggedInRole}`);
       } else {
         toast.error('Invalid credentials.');
       }

@@ -89,8 +89,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           resumeUrl: u.resumeUrl || ''
         }
       });
+      
+      // Fetch JWT token from backend
+      fetch('http://localhost:5000/api/auth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: u.id })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.token) localStorage.setItem('jwt_token', data.token);
+      })
+      .catch(err => console.error('Error fetching JWT:', err));
+      
     } else {
       setUser(null);
+      localStorage.removeItem('jwt_token');
     }
     setLoading(false);
   }, [session, isPending]);
@@ -138,12 +152,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       await authClient.signOut();
-      setUser(null);
     } catch (err) {
       console.error('Better-Auth sign out error:', err);
-    } finally {
-      setLoading(false);
     }
+    setUser(null);
+    localStorage.removeItem('jwt_token');
+    setLoading(false);
   };
 
   const updateProfile = async (profileData: UserProfile): Promise<boolean> => {

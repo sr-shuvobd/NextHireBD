@@ -117,7 +117,10 @@ export default function AdminDashboard() {
     try {
       const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+        },
         body: JSON.stringify({ status: nextStatus })
       });
       if (res.ok) {
@@ -136,7 +139,10 @@ export default function AdminDashboard() {
       onConfirm: async () => {
         try {
           const res = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+            }
           });
           if (res.ok) {
             setUsers(prev => prev.filter(u => u._id !== userId));
@@ -155,7 +161,10 @@ export default function AdminDashboard() {
     try {
       const res = await fetch(`http://localhost:5000/api/jobs/${jobId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+        },
         body: JSON.stringify({ status: nextStatus })
       });
       if (res.ok) {
@@ -174,7 +183,10 @@ export default function AdminDashboard() {
       onConfirm: async () => {
         try {
           const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+            }
           });
           if (res.ok) {
             setJobs(prev => prev.filter(j => j._id !== jobId));

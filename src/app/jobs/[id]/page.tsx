@@ -137,7 +137,10 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetch('http://localhost:5000/api/applications', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+        },
         body: JSON.stringify({
           jobId: job.id,
           jobTitle: job.title,

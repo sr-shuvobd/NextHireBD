@@ -135,7 +135,10 @@ export default function RecruiterDashboard() {
     try {
       await fetch(`http://localhost:5000/api/applications/${app._id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+        },
         body: JSON.stringify({ status: 'Interview Scheduled' })
       });
       setApplicants(prev => prev.map(a => a._id === app._id ? { ...a, status: 'Interview Scheduled' } : a));
@@ -179,7 +182,10 @@ export default function RecruiterDashboard() {
     try {
       const res = await fetch('http://localhost:5000/api/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+        },
         body: JSON.stringify({
           title: jobTitle,
           location: jobLocation,
