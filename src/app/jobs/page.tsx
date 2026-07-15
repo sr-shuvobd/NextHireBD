@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, MapPin, Briefcase, DollarSign, Filter, RefreshCw, X } from 'lucide-react';
 import { getJobs, Job } from '@/services/mockData';
+import Loader from '@/components/shared/Loader';
 
 function JobsContent() {
   const searchParams = useSearchParams();
@@ -27,6 +28,7 @@ function JobsContent() {
   // Job Listing state
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch jobs from server
   useEffect(() => {
@@ -64,6 +66,8 @@ function JobsContent() {
         console.error("Error fetching jobs:", err);
         setAllJobs([]);
         setFilteredJobs([]);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchJobs();
@@ -239,7 +243,9 @@ function JobsContent() {
             <div>Showing {filteredJobs.length} matching opportunities</div>
           </div>
 
-          {filteredJobs.length > 0 ? (
+          {isLoading ? (
+            <Loader />
+          ) : filteredJobs.length > 0 ? (
             filteredJobs.map((job) => (
               <div key={job.id} className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 hover:border-cyan-500/30 hover:shadow-[0_8px_30px_rgba(6,182,212,0.15)] hover:-translate-y-0.5 transition-all duration-300">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
@@ -275,14 +281,25 @@ function JobsContent() {
               </div>
             ))
           ) : (
-            <div className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-20 text-center flex flex-col items-center gap-4">
-              <Briefcase size={48} color="var(--text-muted)" className="animate-[float_3s_ease-in-out_infinite]" />
-              <h3 className="text-2xl font-bold text-[var(--text-primary)]">No Jobs Match Filters</h3>
-              <p className="text-[var(--text-secondary)] max-w-[400px]">
-                Try adjusting your keywords, work settings, or category filters to find matching listings.
-              </p>
-              <button onClick={handleReset} className="outline-btn" style={{ marginTop: 12 }}>
-                Clear Filters
+            <div className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-12 flex flex-col items-center justify-center gap-4 text-center">
+              <div className="w-16 h-16 bg-white/[0.03] rounded-full flex items-center justify-center text-[var(--text-muted)]">
+                <Search size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-[var(--text-primary)]">No jobs found</h3>
+              <p className="text-[var(--text-secondary)] max-w-md">We couldn't find any jobs matching your current filters. Try adjusting your search or clearing filters to see more results.</p>
+              <button 
+                onClick={() => {
+                  setSearch('');
+                  setLocation('');
+                  setCategory('');
+                  setSelectedJobTypes([]);
+                  setSelectedWorkTypes([]);
+                  setMinSalary(0);
+                }}
+                className="mt-4 outline-btn"
+                style={{ padding: '8px 20px' }}
+              >
+                Clear all filters
               </button>
             </div>
           )}

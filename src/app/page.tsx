@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { getJobs } from '@/services/mockData';
 import { useAuth } from '@/context/AuthContext';
+import Loader from '@/components/shared/Loader';
 
 export default function Home() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   React.useEffect(() => {
     const fetchFeaturedJobs = async () => {
@@ -60,10 +62,11 @@ export default function Home() {
           setFeaturedJobs(localJobs.slice(0, 3));
         }
       } catch (err) {
-        console.error("Error fetching homepage featured jobs:", err);
-        // Fallback on network/fetch error
+        console.error('Failed to fetch featured jobs:', err);
         const localJobs = getJobs();
         setFeaturedJobs(localJobs.slice(0, 3));
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchFeaturedJobs();
@@ -194,6 +197,9 @@ export default function Home() {
           </Link>
         </div>
 
+        {isLoading ? (
+          <Loader />
+        ) : (
         <div className="grid grid-cols-1 gap-5">
           {featuredJobs.map((job) => (
             <div key={job.id} className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 hover:border-cyan-500/30 hover:shadow-[0_8px_30px_rgba(6,182,212,0.1)] hover:scale-[1.01] transition-all duration-300">
@@ -230,6 +236,7 @@ export default function Home() {
             </div>
           ))}
         </div>
+        )}
       </section>
 
       {/* Call to Action */}
