@@ -37,7 +37,7 @@ function JobsContent() {
         if (location) queryParams.append('location', location);
         if (selectedJobTypes.length > 0) queryParams.append('type', selectedJobTypes.join(','));
 
-        const res = await fetch(`http://localhost:5000/api/jobs?${queryParams.toString()}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/jobs?${queryParams.toString()}`);
         if (res.ok) {
           const dbJobs = await res.json();
           const mappedJobs = dbJobs.map((dbJob: any) => ({

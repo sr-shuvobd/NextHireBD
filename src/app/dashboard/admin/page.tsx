@@ -72,28 +72,28 @@ export default function AdminDashboard() {
       
       // Ping health check
       try {
-        const healthRes = await fetch('http://localhost:5000/health');
+        const healthRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/health`);
         setServerOnline(healthRes.ok);
       } catch {
         setServerOnline(false);
       }
 
       // Fetch users
-      const usersRes = await fetch('http://localhost:5000/api/admin/users');
+      const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/users`);
       if (usersRes.ok) {
         const usersData = await usersRes.json();
         setUsers(usersData);
       }
 
       // Fetch jobs
-      const jobsRes = await fetch('http://localhost:5000/api/jobs');
+      const jobsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/jobs`);
       if (jobsRes.ok) {
         const jobsData = await jobsRes.json();
         setJobs(jobsData);
       }
 
       // Fetch applications
-      const appsRes = await fetch('http://localhost:5000/api/applications');
+      const appsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/applications`);
       if (appsRes.ok) {
         const appsData = await appsRes.json();
         setApplications(appsData);
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
   const handleToggleUserStatus = async (userId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'Suspended' ? 'Active' : 'Suspended';
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/users/${userId}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
       message: 'Are you sure you want to permanently delete this user account? All associated profile data will be permanently wiped. This action cannot be undone.',
       onConfirm: async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/users/${userId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
   const handleToggleJobStatus = async (jobId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'Pending Review' ? 'Active' : 'Pending Review';
     try {
-      const res = await fetch(`http://localhost:5000/api/jobs/${jobId}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/jobs/${jobId}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ export default function AdminDashboard() {
       message: 'Are you sure you want to permanently delete this job posting? This action cannot be undone and will remove the listing from search results.',
       onConfirm: async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/jobs/${jobId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`

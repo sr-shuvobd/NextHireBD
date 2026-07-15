@@ -51,7 +51,7 @@ export default function SeekerDashboard() {
         // Load applications from API
         const fetchApplications = async () => {
           try {
-            const res = await fetch(`http://localhost:5000/api/applications?seekerId=${user.id}`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/applications?seekerId=${user.id}`);
             if (res.ok) {
               const data = await res.json();
               // map _id to id for the frontend type

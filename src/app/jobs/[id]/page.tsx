@@ -48,7 +48,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
       // If not in mock, fetch from server
       try {
-        const res = await fetch('http://localhost:5000/api/jobs');
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/jobs`);
         if (res.ok) {
           const dbJobs = await res.json();
           const found = dbJobs.find((j: any) => j._id === id);
@@ -86,7 +86,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
     const checkApplication = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/applications?seekerId=${user.id}&jobId=${job.id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/applications?seekerId=${user.id}&jobId=${job.id}`);
         if (res.ok) {
           const apps = await res.json();
           if (apps && apps.length > 0) {
@@ -135,7 +135,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
     setErrorMsg('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/applications', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/applications`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

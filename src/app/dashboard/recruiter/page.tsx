@@ -95,7 +95,7 @@ export default function RecruiterDashboard() {
       // Fetch recruiter's posted jobs
       const fetchMyJobs = async () => {
         try {
-          const res = await fetch('http://localhost:5000/api/jobs');
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/jobs`);
           if (res.ok) {
             const dbJobs = await res.json();
             const myJobs = dbJobs
@@ -125,7 +125,7 @@ export default function RecruiterDashboard() {
     setApplicantsLoading(true);
     setActiveTab('applicants');
     try {
-      const res = await fetch(`http://localhost:5000/api/applications?jobId=${job.id}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/applications?jobId=${job.id}`);
       if (res.ok) setApplicants(await res.json());
     } catch (e) { console.error(e); }
     finally { setApplicantsLoading(false); }
@@ -133,7 +133,7 @@ export default function RecruiterDashboard() {
 
   const handleCallForInterview = async (app: any) => {
     try {
-      await fetch(`http://localhost:5000/api/applications/${app._id}/status`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/applications/${app._id}/status`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ export default function RecruiterDashboard() {
     setIsPosting(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/jobs', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/jobs`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
