@@ -2,24 +2,27 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, Briefcase, Users, Plus, CheckCircle2, Save, X } from 'lucide-react';
+import { User as UserIcon, Briefcase, Users, Plus, CheckCircle2, Save, X, Phone, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-toastify';
 
 export default function RecruiterDashboard() {
   const router = useRouter();
   const { user, loading, updateProfile } = useAuth();
-  
-  // Tab states: 'posted_jobs' | 'profile' | 'post_new_job'
-  const [activeTab, setActiveTab] = useState<'posted_jobs' | 'profile' | 'post_new_job'>('posted_jobs');
-  
+
+  // Tab states
+  const [activeTab, setActiveTab] = useState<'posted_jobs' | 'profile' | 'post_new_job' | 'applicants'>('posted_jobs');
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [applicants, setApplicants] = useState<any[]>([]);
+  const [applicantsLoading, setApplicantsLoading] = useState(false);
+
   // Profile Form States
   const [name, setName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [companyWebsite, setCompanyWebsite] = useState('');
   const [bio, setBio] = useState('');
   const [avatar, setAvatar] = useState('');
-  
+
   // Job Post States
   const [jobTitle, setJobTitle] = useState('');
   const [jobLocation, setJobLocation] = useState('');
@@ -30,12 +33,12 @@ export default function RecruiterDashboard() {
   const [jobExperienceLevel, setJobExperienceLevel] = useState('Mid-Level');
   const [jobSkillsRequired, setJobSkillsRequired] = useState('');
   const [isPosting, setIsPosting] = useState(false);
-  
+
   // Status states
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
-  
+
   // Posted jobs state (initialized empty)
   const [postedJobs, setPostedJobs] = useState<any[]>([]);
 
@@ -43,16 +46,16 @@ export default function RecruiterDashboard() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setLogoUploading(true);
-      
+
       try {
         const formData = new FormData();
         formData.append('image', file);
-        
+
         const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=4983d5f47f26efc3e85064efe6b1a73c`, {
           method: 'POST',
           body: formData,
         });
-        
+
         const imgbbData = await imgbbRes.json();
         if (imgbbData.success) {
           setAvatar(imgbbData.data.url);
@@ -104,7 +107,7 @@ export default function RecruiterDashboard() {
                 type: j.type,
                 applications: j.applications || 0,
                 status: j.status || 'Active',
-                postedAt: j.postedAt ? j.postedAt.split('T')[0] : 'Today'
+                postedAt: j.postedAt ? new Date(j.postedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
               }));
             setPostedJobs(myJobs);
           }
@@ -115,6 +118,32 @@ export default function RecruiterDashboard() {
       fetchMyJobs();
     }
   }, [user, loading, router]);
+
+  const handleViewApplicants = async (job: any) => {
+    setSelectedJob(job);
+    setApplicants([]);
+    setApplicantsLoading(true);
+    setActiveTab('applicants');
+    try {
+      const res = await fetch(`http://localhost:5000/api/applications?jobId=${job.id}`);
+      if (res.ok) setApplicants(await res.json());
+    } catch (e) { console.error(e); }
+    finally { setApplicantsLoading(false); }
+  };
+
+  const handleCallForInterview = async (app: any) => {
+    try {
+      await fetch(`http://localhost:5000/api/applications/${app._id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Interview Scheduled' })
+      });
+      setApplicants(prev => prev.map(a => a._id === app._id ? { ...a, status: 'Interview Scheduled' } : a));
+      if (app.seekerEmail) {
+        window.open(`mailto:${app.seekerEmail}?subject=Interview Invitation - ${app.jobTitle}&body=Dear ${app.seekerName},%0A%0AWe are pleased to invite you for an interview for the ${app.jobTitle} position.%0A%0APlease reply to schedule a convenient time.%0A%0ABest regards,`);
+      }
+    } catch (e) { console.error(e); }
+  };
 
   if (loading || !user) {
     return (
@@ -182,7 +211,7 @@ export default function RecruiterDashboard() {
           ...postedJobs
         ]);
         toast.success('Job posted successfully to Database!');
-        
+
         // Reset form
         setJobTitle('');
         setJobLocation('');
@@ -217,20 +246,14 @@ export default function RecruiterDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8 mt-6 items-start">
         {/* Sidebar Nav */}
         <aside className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-4 flex flex-col gap-2">
-          <button 
-            onClick={() => setActiveTab('posted_jobs')} 
-            className={`flex items-center gap-3 p-3 rounded-[var(--border-radius-sm)] font-semibold text-[0.95rem] cursor-pointer w-full text-left transition-all duration-300 ${activeTab === 'posted_jobs' ? 'bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border border-[var(--accent-purple)]/20' : 'text-[var(--text-secondary)] hover:bg-white/[0.04] hover:text-[var(--text-primary)]'}`}
-          >
-            <Briefcase size={18} />
-            <span>Posted Jobs</span>
+          <button onClick={() => setActiveTab('posted_jobs')} className={`flex items-center gap-3 p-3 rounded-[var(--border-radius-sm)] font-semibold text-[0.95rem] cursor-pointer w-full text-left transition-all duration-300 ${activeTab === 'posted_jobs' || activeTab === 'post_new_job' ? 'bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border border-[var(--accent-purple)]/20' : 'text-[var(--text-secondary)] hover:bg-white/[0.04] hover:text-[var(--text-primary)]'}`}>
+            <Briefcase size={18} /><span>Posted Jobs</span>
           </button>
-          
-          <button 
-            onClick={() => setActiveTab('profile')} 
-            className={`flex items-center gap-3 p-3 rounded-[var(--border-radius-sm)] font-semibold text-[0.95rem] cursor-pointer w-full text-left transition-all duration-300 ${activeTab === 'profile' ? 'bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border border-[var(--accent-purple)]/20' : 'text-[var(--text-secondary)] hover:bg-white/[0.04] hover:text-[var(--text-primary)]'}`}
-          >
-            <UserIcon size={18} />
-            <span>Company Profile</span>
+          <button onClick={() => setActiveTab('applicants')} className={`flex items-center gap-3 p-3 rounded-[var(--border-radius-sm)] font-semibold text-[0.95rem] cursor-pointer w-full text-left transition-all duration-300 ${activeTab === 'applicants' ? 'bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border border-[var(--accent-purple)]/20' : 'text-[var(--text-secondary)] hover:bg-white/[0.04] hover:text-[var(--text-primary)]'}`}>
+            <Users size={18} /><span>Applicants</span>
+          </button>
+          <button onClick={() => setActiveTab('profile')} className={`flex items-center gap-3 p-3 rounded-[var(--border-radius-sm)] font-semibold text-[0.95rem] cursor-pointer w-full text-left transition-all duration-300 ${activeTab === 'profile' ? 'bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border border-[var(--accent-purple)]/20' : 'text-[var(--text-secondary)] hover:bg-white/[0.04] hover:text-[var(--text-primary)]'}`}>
+            <UserIcon size={18} /><span>Company Profile</span>
           </button>
         </aside>
 
@@ -246,7 +269,7 @@ export default function RecruiterDashboard() {
                   Post New Job
                 </button>
               </div>
-              
+
               {postedJobs.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {postedJobs.map((job) => (
@@ -254,22 +277,17 @@ export default function RecruiterDashboard() {
                       <div className="flex flex-col gap-1.5">
                         <div className="text-[1.15rem] font-bold text-[var(--text-primary)]">{job.title}</div>
                         <div className="text-[0.95rem] text-[var(--text-secondary)]">{job.type} • {job.location}</div>
-                        <div className="text-[0.85rem] text-[var(--text-muted)]">
-                          Posted on: {new Date(job.postedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </div>
+                        <div className="text-[0.85rem] text-[var(--text-muted)]">Posted on: {new Date(job.postedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                       </div>
-                      <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-4 flex-wrap">
                         <div className="flex flex-col items-center">
                           <span className="text-xl font-bold text-[var(--accent-cyan)]">{job.applications}</span>
                           <span className="text-[0.8rem] text-[var(--text-muted)] uppercase tracking-wider">Applicants</span>
                         </div>
-                        <span className="px-3.5 py-1.5 rounded-full text-[0.8rem] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-[var(--success)]">
-                          {job.status}
-                        </span>
+                        <span className="px-3.5 py-1.5 rounded-full text-[0.8rem] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-[var(--success)]">{job.status}</span>
+                        <button onClick={() => handleViewApplicants(job)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-[0.85rem] font-semibold cursor-pointer transition-all duration-300" style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.25)', color: 'var(--accent-cyan)' }}>
+                          <Users size={15} /> View Applicants
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -287,6 +305,72 @@ export default function RecruiterDashboard() {
             </div>
           )}
 
+          {/* Applicants Panel */}
+          {activeTab === 'applicants' && (
+            <div className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-6 md:p-8 shadow-[var(--shadow-glass)]">
+              {!selectedJob ? (
+                <div className="text-center py-16 text-[var(--text-secondary)]">
+                  <Users size={44} className="mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-semibold mb-2">No job selected</p>
+                  <p className="text-sm mb-4">Go to <span className="text-[var(--accent-cyan)] font-semibold">Posted Jobs</span> and click &quot;View Applicants&quot; on a job.</p>
+                  <button onClick={() => setActiveTab('posted_jobs')} className="accent-btn">
+                    <ArrowLeft size={16} /> Go to Posted Jobs
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-6 border-b border-[var(--border-color)] pb-3">
+                    <div>
+                      <h2 className="text-2xl font-bold text-[var(--text-primary)]">Applicants</h2>
+                      <p className="text-[var(--text-secondary)] text-sm mt-1">{selectedJob.title} • {selectedJob.location}</p>
+                    </div>
+                    <button onClick={() => setActiveTab('posted_jobs')} className="outline-btn py-2 text-[0.9rem]"><ArrowLeft size={16} /> Back</button>
+                  </div>
+                  {applicantsLoading ? (
+                    <div className="flex justify-center items-center py-16"><div className="w-10 h-10 border-4 border-[var(--accent-cyan)] border-t-transparent rounded-full animate-spin"></div></div>
+                  ) : applicants.length === 0 ? (
+                    <div className="text-center py-16 text-[var(--text-secondary)]">
+                      <Users size={40} className="mx-auto mb-3 opacity-40" />
+                      <p>No applications received yet for this job.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {applicants.map((app) => (
+                        <div key={app._id} className="border border-[var(--border-color)] rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-[var(--border-color-hover)] transition-all duration-300" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white text-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))' }}>
+                              {app.seekerName?.[0]?.toUpperCase() || '?'}
+                            </div>
+                            <div>
+                              <div className="font-bold text-[var(--text-primary)] text-[1.05rem]">{app.seekerName}</div>
+                              {app.seekerEmail && <div className="text-sm text-[var(--text-secondary)] mt-0.5">{app.seekerEmail}</div>}
+                              {app.seekerPhone && <div className="text-sm text-[var(--text-muted)] mt-0.5">{app.seekerPhone}</div>}
+                              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[0.75rem] font-bold uppercase tracking-wider ${app.status === 'Interview Scheduled' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>{app.status}</span>
+                                <span className="text-xs text-[var(--text-muted)]">{new Date(app.createdAt).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <button
+                              onClick={() => handleCallForInterview(app)}
+                              disabled={app.status === 'Interview Scheduled'}
+                              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[0.85rem] font-semibold transition-all duration-300"
+                              style={{ background: app.status === 'Interview Scheduled' ? 'rgba(16,185,129,0.1)' : 'linear-gradient(135deg, #10b981, #06b6d4)', color: app.status === 'Interview Scheduled' ? '#10b981' : '#fff', border: app.status === 'Interview Scheduled' ? '1px solid rgba(16,185,129,0.2)' : 'none', opacity: app.status === 'Interview Scheduled' ? 0.7 : 1, cursor: app.status === 'Interview Scheduled' ? 'default' : 'pointer' }}
+                            >
+                              <Phone size={15} />
+                              {app.status === 'Interview Scheduled' ? 'Invited ✓' : 'Call for Interview'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           {/* Post New Job Tab */}
           {activeTab === 'post_new_job' && (
             <div className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-6 md:p-8 shadow-[var(--shadow-glass)]">
@@ -300,35 +384,35 @@ export default function RecruiterDashboard() {
               <form onSubmit={handlePostJob} className="flex flex-col gap-5">
                 <div className="flex flex-col gap-2">
                   <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Job Title</label>
-                  <input 
-                    type="text" 
-                    value={jobTitle} 
+                  <input
+                    type="text"
+                    value={jobTitle}
                     onChange={(e) => setJobTitle(e.target.value)}
                     placeholder="e.g. Senior React Developer"
-                    className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
-                    required 
+                    className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
+                    required
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Location</label>
-                    <input 
-                      type="text" 
-                      value={jobLocation} 
+                    <input
+                      type="text"
+                      value={jobLocation}
                       onChange={(e) => setJobLocation(e.target.value)}
                       placeholder="e.g. Dhaka (Remote)"
-                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
-                      required 
+                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
+                      required
                     />
                   </div>
-                  
+
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Job Type</label>
-                    <select 
-                      value={jobType} 
+                    <select
+                      value={jobType}
                       onChange={(e) => setJobType(e.target.value)}
-                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none appearance-none" 
+                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none appearance-none"
                       required
                     >
                       <option value="Full-Time" className="bg-[var(--bg-primary)]">Full-Time</option>
@@ -342,22 +426,22 @@ export default function RecruiterDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Salary / Compensation</label>
-                    <input 
-                      type="text" 
-                      value={jobSalary} 
+                    <input
+                      type="text"
+                      value={jobSalary}
                       onChange={(e) => setJobSalary(e.target.value)}
                       placeholder="e.g. 50,000 - 80,000 BDT or Negotiable"
-                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
-                      required 
+                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
+                      required
                     />
                   </div>
-                  
+
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Experience Level</label>
-                    <select 
-                      value={jobExperienceLevel} 
+                    <select
+                      value={jobExperienceLevel}
                       onChange={(e) => setJobExperienceLevel(e.target.value)}
-                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none appearance-none" 
+                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none appearance-none"
                       required
                     >
                       <option value="Entry-Level" className="bg-[var(--bg-primary)]">Entry-Level</option>
@@ -370,20 +454,20 @@ export default function RecruiterDashboard() {
 
                 <div className="flex flex-col gap-2">
                   <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Skills Required (Comma separated)</label>
-                  <input 
-                    type="text" 
-                    value={jobSkillsRequired} 
+                  <input
+                    type="text"
+                    value={jobSkillsRequired}
                     onChange={(e) => setJobSkillsRequired(e.target.value)}
                     placeholder="e.g. React, Node.js, TypeScript, MongoDB"
-                    className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
-                    required 
+                    className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
+                    required
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Job Description</label>
-                  <textarea 
-                    value={jobDescription} 
+                  <textarea
+                    value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Describe the job role, tasks, daily operations..."
                     className="w-full min-h-[120px] px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] resize-y transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
@@ -393,8 +477,8 @@ export default function RecruiterDashboard() {
 
                 <div className="flex flex-col gap-2">
                   <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Requirements / Qualifications</label>
-                  <textarea 
-                    value={jobRequirements} 
+                  <textarea
+                    value={jobRequirements}
                     onChange={(e) => setJobRequirements(e.target.value)}
                     placeholder="What qualifications, degrees, or certifications are required?"
                     className="w-full min-h-[120px] px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] resize-y transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
@@ -402,9 +486,9 @@ export default function RecruiterDashboard() {
                   />
                 </div>
 
-                <button 
-                  type="submit" 
-                  className="accent-btn" 
+                <button
+                  type="submit"
+                  className="accent-btn"
                   style={{ alignSelf: 'flex-start', marginTop: 12 }}
                   disabled={isPosting}
                 >
@@ -436,12 +520,12 @@ export default function RecruiterDashboard() {
                       <span className="text-[0.75rem] text-white font-bold text-center px-1">Upload Logo</span>
                     </div>
                   </label>
-                  <input 
-                    type="file" 
-                    id="companyLogoUpload" 
-                    accept="image/*" 
-                    style={{ display: 'none' }} 
-                    onChange={handleLogoUpload} 
+                  <input
+                    type="file"
+                    id="companyLogoUpload"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleLogoUpload}
                     disabled={logoUploading}
                   />
                   <span className="text-[0.8rem] text-[var(--accent-cyan)] cursor-pointer font-semibold" onClick={() => document.getElementById('companyLogoUpload')?.click()}>
@@ -454,23 +538,23 @@ export default function RecruiterDashboard() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="flex flex-col gap-2">
                       <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Recruiter Name</label>
-                      <input 
-                        type="text" 
-                        value={name} 
+                      <input
+                        type="text"
+                        value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
-                        disabled 
+                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
+                        disabled
                       />
                     </div>
-                    
+
                     <div className="flex flex-col gap-2">
                       <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Company Name</label>
-                      <input 
-                        type="text" 
-                        value={companyName} 
+                      <input
+                        type="text"
+                        value={companyName}
                         placeholder="e.g. TechCorp Solutions"
                         onChange={(e) => setCompanyName(e.target.value)}
-                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
+                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
                         required
                       />
                     </div>
@@ -478,20 +562,20 @@ export default function RecruiterDashboard() {
 
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Company Website</label>
-                    <input 
-                      type="url" 
-                      value={companyWebsite} 
+                    <input
+                      type="url"
+                      value={companyWebsite}
                       placeholder="e.g. https://example.com"
                       onChange={(e) => setCompanyWebsite(e.target.value)}
-                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
+                      className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
                       required
                     />
                   </div>
 
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Company Bio / Description</label>
-                    <textarea 
-                      value={bio} 
+                    <textarea
+                      value={bio}
                       placeholder="Write a short summary about your company..."
                       onChange={(e) => setBio(e.target.value)}
                       className="w-full min-h-[100px] px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] resize-y transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
@@ -499,9 +583,9 @@ export default function RecruiterDashboard() {
                     ></textarea>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className="accent-btn" 
+                  <button
+                    type="submit"
+                    className="accent-btn"
                     style={{ alignSelf: 'flex-start', marginTop: 12 }}
                     disabled={isSaving}
                   >

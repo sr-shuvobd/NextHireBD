@@ -144,6 +144,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
           companyName: job.companyName,
           seekerId: user.id,
           seekerName: user.name,
+          seekerEmail: user.email,
+          seekerPhone: (user.profile as any)?.phone || '',
           coverLetter,
           resumeUrl
         })

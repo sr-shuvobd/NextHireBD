@@ -9,10 +9,10 @@ import { getApplications, Application } from '@/services/mockData';
 export default function SeekerDashboard() {
   const router = useRouter();
   const { user, loading, updateProfile } = useAuth();
-  
+
   // Tab states: 'profile' | 'applications'
   const [activeTab, setActiveTab] = useState<'profile' | 'applications'>('applications');
-  
+
   // Profile Form States
   const [name, setName] = useState('');
   const [title, setTitle] = useState('');
@@ -21,7 +21,7 @@ export default function SeekerDashboard() {
   const [skillInput, setSkillInput] = useState('');
   const [resumeUrl, setResumeUrl] = useState('');
   const [avatar, setAvatar] = useState('');
-  
+
   // Status states
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -130,16 +130,16 @@ export default function SeekerDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8 mt-6 items-start">
         {/* Sidebar Nav */}
         <aside className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-4 flex flex-col gap-2">
-          <button 
-            onClick={() => setActiveTab('applications')} 
+          <button
+            onClick={() => setActiveTab('applications')}
             className={`flex items-center gap-3 p-3 rounded-[var(--border-radius-sm)] font-semibold text-[0.95rem] cursor-pointer w-full text-left transition-all duration-300 ${activeTab === 'applications' ? 'bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border border-[var(--accent-purple)]/20' : 'text-[var(--text-secondary)] hover:bg-white/[0.04] hover:text-[var(--text-primary)]'}`}
           >
             <Briefcase size={18} />
             <span>My Applications</span>
           </button>
-          
-          <button 
-            onClick={() => setActiveTab('profile')} 
+
+          <button
+            onClick={() => setActiveTab('profile')}
             className={`flex items-center gap-3 p-3 rounded-[var(--border-radius-sm)] font-semibold text-[0.95rem] cursor-pointer w-full text-left transition-all duration-300 ${activeTab === 'profile' ? 'bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border border-[var(--accent-purple)]/20' : 'text-[var(--text-secondary)] hover:bg-white/[0.04] hover:text-[var(--text-primary)]'}`}
           >
             <UserIcon size={18} />
@@ -153,7 +153,7 @@ export default function SeekerDashboard() {
           {activeTab === 'applications' && (
             <div className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-color)] rounded-[var(--border-radius-md)] p-6 md:p-8 shadow-[var(--shadow-glass)]">
               <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6 border-b border-[var(--border-color)] pb-3">Application History</h2>
-              
+
               {applications.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {applications.map((app) => (
@@ -218,23 +218,23 @@ export default function SeekerDashboard() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="flex flex-col gap-2">
                       <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Full Name</label>
-                      <input 
-                        type="text" 
-                        value={name} 
+                      <input
+                        type="text"
+                        value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
+                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
                         disabled // Disabled name edit for security
                       />
                     </div>
-                    
+
                     <div className="flex flex-col gap-2">
                       <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Professional Title</label>
-                      <input 
-                        type="text" 
-                        value={title} 
+                      <input
+                        type="text"
+                        value={title}
                         placeholder="e.g. Senior Frontend Developer"
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
+                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
                         required
                       />
                     </div>
@@ -242,8 +242,8 @@ export default function SeekerDashboard() {
 
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Professional Bio</label>
-                    <textarea 
-                      value={bio} 
+                    <textarea
+                      value={bio}
                       placeholder="Write a short summary about your accomplishments..."
                       onChange={(e) => setBio(e.target.value)}
                       className="w-full min-h-[100px] px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] resize-y transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
@@ -254,12 +254,12 @@ export default function SeekerDashboard() {
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Resume PDF Link</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <input 
-                        type="text" 
-                        value={resumeUrl} 
+                      <input
+                        type="text"
+                        value={resumeUrl}
                         placeholder="e.g. https://yourcv.example.com/resume.pdf"
                         onChange={(e) => setResumeUrl(e.target.value)}
-                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
+                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
                         required
                       />
                     </div>
@@ -269,12 +269,12 @@ export default function SeekerDashboard() {
                   <div className="flex flex-col gap-2">
                     <label className="text-[0.9rem] font-semibold text-[var(--text-primary)]">Skills / Technologies</label>
                     <div style={{ display: 'flex', gap: 10 }}>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="Type a skill (e.g. React) and click Add"
                         value={skillInput}
                         onChange={(e) => setSkillInput(e.target.value)}
-                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none" 
+                        className="w-full px-3.5 py-3 rounded-[var(--border-radius-sm)] border border-[var(--border-color)] bg-white/[0.02] text-[var(--text-primary)] text-[0.95rem] transition-all duration-300 focus:border-[var(--accent-purple)] focus:bg-white/[0.04] outline-none"
                       />
                       <button type="button" onClick={handleAddSkill} className="outline-btn" style={{ padding: '0 16px' }}>
                         <Plus size={18} />
@@ -291,9 +291,9 @@ export default function SeekerDashboard() {
                     </div>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className="accent-btn" 
+                  <button
+                    type="submit"
+                    className="accent-btn"
                     style={{ alignSelf: 'flex-start', marginTop: 12 }}
                     disabled={isSaving}
                   >
